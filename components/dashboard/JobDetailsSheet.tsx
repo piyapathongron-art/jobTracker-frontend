@@ -17,6 +17,13 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { api } from "@/lib/axios";
 import type { JobApplication } from "@/lib/types";
 import {
@@ -34,6 +41,9 @@ import {
   FileText,
   LayoutDashboard,
   Lightbulb,
+  Mail,
+  Copy,
+  Check,
 } from "lucide-react";
 import { JobForm } from "./JobForm";
 import { useJobStore } from "@/store/useJobStore";
@@ -48,6 +58,20 @@ interface InterviewQuestion {
   question: string;
   starHint: string;
 }
+
+interface DraftedEmail {
+  subject: string;
+  body: string;
+}
+
+const EMAIL_TYPES = [
+  "Follow-up on Application",
+  "Thank You (Post-Interview)",
+  "Offer Negotiation",
+  "Decline Offer",
+] as const;
+
+type EmailType = (typeof EMAIL_TYPES)[number];
 
 export function JobDetailsSheet({ job, open, onOpenChange }: Props) {
   const updateJobDetails = useJobStore((s) => s.updateJobDetails);
@@ -68,6 +92,15 @@ export function JobDetailsSheet({ job, open, onOpenChange }: Props) {
   >(null);
   const [interviewError, setInterviewError] = useState<string | null>(null);
 
+  // Email Drafter state
+  const [selectedEmailType, setSelectedEmailType] = useState<EmailType>(
+    "Follow-up on Application"
+  );
+  const [isDraftingEmail, setIsDraftingEmail] = useState(false);
+  const [draftedEmail, setDraftedEmail] = useState<DraftedEmail | null>(null);
+  const [emailError, setEmailError] = useState<string | null>(null);
+  const [bodyCopied, setBodyCopied] = useState(false);
+
   // Edit state
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
@@ -82,6 +115,9 @@ export function JobDetailsSheet({ job, open, onOpenChange }: Props) {
       setInterviewQuestions(null);
       setTailorError(null);
       setInterviewError(null);
+      setDraftedEmail(null);
+      setEmailError(null);
+      setBodyCopied(false);
     }
   }
 
@@ -116,6 +152,35 @@ export function JobDetailsSheet({ job, open, onOpenChange }: Props) {
     } finally {
       setIsGeneratingQuestions(false);
     }
+  }
+
+  async function handleDraftEmail() {
+    if (!job) return;
+    setIsDraftingEmail(true);
+    setEmailError(null);
+    setDraftedEmail(null);
+    setBodyCopied(false);
+    try {
+      const res = await api.post("/api/ai/email", {
+        jobId: job.id,
+        emailType: selectedEmailType,
+      });
+      setDraftedEmail(res.data);
+    } catch (err: any) {
+      setEmailError(
+        err.response?.data?.error ||
+          "Failed to draft the email. Please try again."
+      );
+    } finally {
+      setIsDraftingEmail(false);
+    }
+  }
+
+  function handleCopyBody() {
+    if (!draftedEmail) return;
+    navigator.clipboard.writeText(draftedEmail.body);
+    setBodyCopied(true);
+    setTimeout(() => setBodyCopied(false), 2000);
   }
 
   async function handleEditSubmit(data: any) {
@@ -177,18 +242,22 @@ export function JobDetailsSheet({ job, open, onOpenChange }: Props) {
             </div>
           ) : (
             <Tabs defaultValue="overview">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="overview" className="gap-1.5 text-xs">
-                  <LayoutDashboard className="h-3.5 w-3.5" />
-                  Overview
+              <TabsList className="grid w-full grid-cols-4">
+                <TabsTrigger value="overview" className="gap-1 text-xs px-1">
+                  <LayoutDashboard className="h-3.5 w-3.5 shrink-0" />
+                  <span className="hidden sm:inline">Overview</span>
                 </TabsTrigger>
-                <TabsTrigger value="cover-letter" className="gap-1.5 text-xs">
-                  <FileText className="h-3.5 w-3.5" />
-                  Cover Letter
+                <TabsTrigger value="cover-letter" className="gap-1 text-xs px-1">
+                  <FileText className="h-3.5 w-3.5 shrink-0" />
+                  <span className="hidden sm:inline">Cover Letter</span>
                 </TabsTrigger>
-                <TabsTrigger value="interview-prep" className="gap-1.5 text-xs">
-                  <BrainCircuit className="h-3.5 w-3.5" />
-                  Interview Prep
+                <TabsTrigger value="interview-prep" className="gap-1 text-xs px-1">
+                  <BrainCircuit className="h-3.5 w-3.5 shrink-0" />
+                  <span className="hidden sm:inline">Interview</span>
+                </TabsTrigger>
+                <TabsTrigger value="email-drafter" className="gap-1 text-xs px-1">
+                  <Mail className="h-3.5 w-3.5 shrink-0" />
+                  <span className="hidden sm:inline">Email</span>
                 </TabsTrigger>
               </TabsList>
 
@@ -448,6 +517,125 @@ export function JobDetailsSheet({ job, open, onOpenChange }: Props) {
                     </p>
                     <p className="text-xs opacity-70">
                       Uses the role, company, and tech stack from your notes.
+                    </p>
+                  </div>
+                )}
+              </TabsContent>
+
+              {/* ── Email Drafter Tab ── */}
+              <TabsContent value="email-drafter" className="mt-6 space-y-5">
+                <div>
+                  <h3 className="font-semibold flex items-center gap-2 text-sm">
+                    <Mail className="h-4 w-4 text-primary" />
+                    Smart Email Drafter
+                  </h3>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Generate a professional, ready-to-send email for this application.
+                  </p>
+                </div>
+
+                {/* Email type selector + action button */}
+                <div className="flex items-center gap-3">
+                  <Select
+                    value={selectedEmailType}
+                    onValueChange={(v) => {
+                      setSelectedEmailType(v as EmailType);
+                      setDraftedEmail(null);
+                      setEmailError(null);
+                    }}
+                  >
+                    <SelectTrigger className="flex-1 text-sm">
+                      <SelectValue placeholder="Select email type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {EMAIL_TYPES.map((type) => (
+                        <SelectItem key={type} value={type}>
+                          {type}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    onClick={handleDraftEmail}
+                    disabled={isDraftingEmail}
+                    size="sm"
+                    className="gap-1.5 shrink-0"
+                  >
+                    {isDraftingEmail ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Drafting...
+                      </>
+                    ) : (
+                      <>
+                        <Mail className="h-4 w-4" />
+                        {draftedEmail ? "Redraft" : "Draft Email"}
+                      </>
+                    )}
+                  </Button>
+                </div>
+
+                {emailError && (
+                  <div className="p-4 rounded-lg bg-red-50 text-red-700 border border-red-200 text-sm flex items-start gap-2">
+                    <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+                    {emailError}
+                  </div>
+                )}
+
+                {draftedEmail && (
+                  <div className="animate-in fade-in slide-in-from-bottom-2 duration-300 space-y-3">
+                    {/* Subject line */}
+                    <div className="space-y-1.5">
+                      <p className="text-xs font-semibold uppercase text-primary">
+                        Subject
+                      </p>
+                      <div className="px-4 py-2.5 rounded-lg border border-border bg-muted/40 text-sm font-medium">
+                        {draftedEmail.subject}
+                      </div>
+                    </div>
+
+                    {/* Email body */}
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <p className="text-xs font-semibold uppercase text-primary">
+                          Email Body
+                        </p>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 gap-1.5 text-xs"
+                          onClick={handleCopyBody}
+                        >
+                          {bodyCopied ? (
+                            <>
+                              <Check className="h-3.5 w-3.5 text-green-600" />
+                              <span className="text-green-600">Copied!</span>
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="h-3.5 w-3.5" />
+                              Copy Body
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                      <div className="p-5 rounded-lg border border-border bg-background text-sm leading-loose whitespace-pre-wrap shadow-sm">
+                        {draftedEmail.body}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {!draftedEmail && !isDraftingEmail && (
+                  <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground space-y-2">
+                    <Mail className="h-10 w-10 opacity-20" />
+                    <p className="text-sm">
+                      Select an email type and click{" "}
+                      <span className="font-medium">Draft Email</span> to
+                      generate a professional message.
+                    </p>
+                    <p className="text-xs opacity-70">
+                      Uses your name, the role, and company to personalize the draft.
                     </p>
                   </div>
                 )}
