@@ -1,7 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { BriefcaseBusiness, LogOut, User } from "lucide-react";
+import { BriefcaseBusiness, LogOut, User, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/store/useAuthStore";
 
@@ -19,10 +20,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-sm border-b border-border">
         <div className="max-w-screen-xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
+          <Link href="/dashboard" className="flex items-center gap-2.5">
             <BriefcaseBusiness className="h-5 w-5 text-primary" />
             <span className="font-semibold text-foreground tracking-tight">JobTracker</span>
-          </div>
+          </Link>
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center">
@@ -30,6 +31,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </div>
               <span className="hidden sm:inline">{user?.name ?? user?.email ?? "User"}</span>
             </div>
+            
+            <Link href="/dashboard/profile" passHref>
+              <Button size="sm" variant="ghost" className="cursor-pointer gap-1.5 text-muted-foreground hover:text-foreground">
+                <Settings className="h-4 w-4" />
+                <span className="hidden sm:inline">Profile</span>
+              </Button>
+            </Link>
+
             <Button
               size="sm"
               variant="ghost"
@@ -37,7 +46,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               onClick={handleSignOut}
             >
               <LogOut className="h-4 w-4" />
-              Log out
+              <span className="hidden sm:inline">Log out</span>
             </Button>
           </div>
         </div>

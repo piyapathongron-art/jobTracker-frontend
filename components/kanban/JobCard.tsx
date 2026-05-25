@@ -19,9 +19,10 @@ function salary(min?: number | null, max?: number | null) {
 interface Props {
   job: JobApplication;
   index: number;
+  onClick?: (job: JobApplication) => void;
 }
 
-export function JobCard({ job, index }: Props) {
+export function JobCard({ job, index, onClick }: Props) {
   const sal = salary(job.salaryMin, job.salaryMax);
   const applied = job.appliedAt
     ? new Date(job.appliedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })
@@ -34,6 +35,7 @@ export function JobCard({ job, index }: Props) {
           ref={provided.innerRef}
           {...provided.draggableProps}
           {...provided.dragHandleProps}
+          onClick={() => onClick?.(job)}
         >
           <Card
             className={`cursor-grab active:cursor-grabbing transition-shadow duration-150 ${

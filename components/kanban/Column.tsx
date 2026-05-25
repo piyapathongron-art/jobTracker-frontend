@@ -10,9 +10,10 @@ interface Props {
   color: string;
   dot: string;
   jobs: JobApplication[];
+  onJobClick?: (job: JobApplication) => void;
 }
 
-export function Column({ droppableId, label, color, dot, jobs }: Props) {
+export function Column({ droppableId, label, color, dot, jobs, onJobClick }: Props) {
   return (
     <div className="shrink-0 w-64">
       <div className={`rounded-xl border border-t-4 ${color} bg-card h-full flex flex-col`}>
@@ -38,7 +39,14 @@ export function Column({ droppableId, label, color, dot, jobs }: Props) {
               {jobs.length === 0 ? (
                 <p className="text-xs text-muted-foreground text-center py-8">No applications</p>
               ) : (
-                jobs.map((job, i) => <JobCard key={job.id} job={job} index={i} />)
+                jobs.map((job, i) => (
+                  <JobCard 
+                    key={job.id} 
+                    job={job} 
+                    index={i} 
+                    onClick={onJobClick}
+                  />
+                ))
               )}
               {provided.placeholder}
             </div>

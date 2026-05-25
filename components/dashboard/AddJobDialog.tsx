@@ -54,7 +54,7 @@ export function AddJobDialog({ open, onOpenChange }: Props) {
     setIsParsing(true);
     setError(null);
     try {
-      const res = await api.post("/ai/parse-jd", { text: jdText });
+      const res = await api.post("/api/ai/parse-jd", { text: jdText });
       const data = res.data;
       if (data.company) setCompany(data.company);
       if (data.role) setRole(data.role);

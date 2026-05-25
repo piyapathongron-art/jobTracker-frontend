@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import { DragDropContext, type DropResult } from "@hello-pangea/dnd";
 import { useJobStore } from "@/store/useJobStore";
 import { Column } from "./Column";
-import type { Status } from "@/lib/types";
+import { JobDetailsSheet } from "../dashboard/JobDetailsSheet";
+import type { Status, JobApplication } from "@/lib/types";
 
 const COLUMNS: { status: Status; label: string; color: string; dot: string }[] = [
   { status: "WISHLIST",     label: "Wishlist",     color: "border-t-slate-400",   dot: "bg-slate-400"   },
@@ -20,6 +21,9 @@ export function Board() {
   const jobs = useJobStore((s) => s.jobs);
   const updateJobStatus = useJobStore((s) => s.updateJobStatus);
 
+  const [selectedJob, setSelectedJob] = useState<JobApplication | null>(null);
+  const [sheetOpen, setSheetOpen] = useState(false);
+
   useEffect(() => {
     setIsMounted(true);
   }, []);
@@ -27,6 +31,11 @@ export function Board() {
   function onDragEnd(result: DropResult) {
     if (!result.destination) return;
     updateJobStatus(result.draggableId, result.destination.droppableId as Status);
+  }
+
+  function handleJobClick(job: JobApplication) {
+    setSelectedJob(job);
+    setSheetOpen(true);
   }
 
   if (!isMounted) {
@@ -40,19 +49,28 @@ export function Board() {
   }
 
   return (
-    <DragDropContext onDragEnd={onDragEnd}>
-      <div className="flex gap-4 overflow-x-auto pb-4 min-h-[calc(100vh-320px)]">
-        {COLUMNS.map((col) => (
-          <Column
-            key={col.status}
-            droppableId={col.status}
-            label={col.label}
-            color={col.color}
-            dot={col.dot}
-            jobs={jobs.filter((j) => j.status === col.status)}
-          />
-        ))}
-      </div>
-    </DragDropContext>
+    <>
+      <JobDetailsSheet 
+        job={selectedJob} 
+        open={sheetOpen} 
+        onOpenChange={setSheetOpen} 
+      />
+      
+      <DragDropContext onDragEnd={onDragEnd}>
+        <div className="flex gap-4 overflow-x-auto pb-4 min-h-[calc(100vh-320px)]">
+          {COLUMNS.map((col) => (
+            <Column
+              key={col.status}
+              droppableId={col.status}
+              label={col.label}
+              color={col.color}
+              dot={col.dot}
+              jobs={jobs.filter((j) => j.status === col.status)}
+              onJobClick={handleJobClick}
+            />
+          ))}
+        </div>
+      </DragDropContext>
+    </>
   );
 }

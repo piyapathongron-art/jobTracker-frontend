@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   Table,
   TableBody,
@@ -11,8 +12,9 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useJobStore } from "@/store/useJobStore";
-import type { Status } from "@/lib/types";
-import { Trash2 } from "lucide-react";
+import { JobDetailsSheet } from "./JobDetailsSheet";
+import type { Status, JobApplication } from "@/lib/types";
+import { Trash2, Eye } from "lucide-react";
 
 const STATUS_LABEL: Record<Status, string> = {
   WISHLIST:     "Wishlist",
@@ -47,65 +49,95 @@ export function JobTable() {
   const jobs = useJobStore((s) => s.jobs);
   const deleteJob = useJobStore((s) => s.deleteJob);
 
+  const [selectedJob, setSelectedJob] = useState<JobApplication | null>(null);
+  const [sheetOpen, setSheetOpen] = useState(false);
+
+  function handleRowClick(job: JobApplication) {
+    setSelectedJob(job);
+    setSheetOpen(true);
+  }
+
   return (
-    <div className="rounded-xl border border-border overflow-hidden">
-      <Table>
-        <TableHeader>
-          <TableRow className="bg-muted/50">
-            <TableHead className="font-semibold text-foreground">Company</TableHead>
-            <TableHead className="font-semibold text-foreground">Role</TableHead>
-            <TableHead className="font-semibold text-foreground">Status</TableHead>
-            <TableHead className="font-semibold text-foreground">Location</TableHead>
-            <TableHead className="font-semibold text-foreground">Salary</TableHead>
-            <TableHead className="font-semibold text-foreground">Applied</TableHead>
-            <TableHead className="w-10" />
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {jobs.length === 0 ? (
-            <TableRow>
-              <TableCell colSpan={7} className="text-center py-16 text-muted-foreground">
-                No applications yet. Add your first one!
-              </TableCell>
+    <>
+      <JobDetailsSheet 
+        job={selectedJob} 
+        open={sheetOpen} 
+        onOpenChange={setSheetOpen} 
+      />
+
+      <div className="rounded-xl border border-border overflow-hidden">
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-muted/50">
+              <TableHead className="font-semibold text-foreground">Company</TableHead>
+              <TableHead className="font-semibold text-foreground">Role</TableHead>
+              <TableHead className="font-semibold text-foreground">Status</TableHead>
+              <TableHead className="font-semibold text-foreground">Location</TableHead>
+              <TableHead className="font-semibold text-foreground">Salary</TableHead>
+              <TableHead className="font-semibold text-foreground">Applied</TableHead>
+              <TableHead className="w-20" />
             </TableRow>
-          ) : (
-            jobs.map((job) => (
-              <TableRow key={job.id} className="hover:bg-muted/40 transition-colors group">
-                <TableCell className="font-medium text-foreground">{job.company}</TableCell>
-                <TableCell className="text-muted-foreground">{job.role}</TableCell>
-                <TableCell>
-                  <Badge variant="outline" className={STATUS_VARIANT[job.status]}>
-                    {STATUS_LABEL[job.status]}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-muted-foreground">{job.location ?? "—"}</TableCell>
-                <TableCell className="text-muted-foreground">
-                  {salary(job.salaryMin, job.salaryMax)}
-                </TableCell>
-                <TableCell className="text-muted-foreground">
-                  {job.appliedAt
-                    ? new Date(job.appliedAt).toLocaleDateString("en-US", {
-                        month: "short",
-                        day: "numeric",
-                        year: "numeric",
-                      })
-                    : "—"}
-                </TableCell>
-                <TableCell>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="h-7 w-7 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-red-600 transition-all"
-                    onClick={() => deleteJob(job.id)}
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </Button>
+          </TableHeader>
+          <TableBody>
+            {jobs.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={7} className="text-center py-16 text-muted-foreground">
+                  No applications yet. Add your first one!
                 </TableCell>
               </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
-    </div>
+            ) : (
+              jobs.map((job) => (
+                <TableRow 
+                  key={job.id} 
+                  className="hover:bg-muted/40 transition-colors group cursor-pointer"
+                  onClick={() => handleRowClick(job)}
+                >
+                  <TableCell className="font-medium text-foreground">{job.company}</TableCell>
+                  <TableCell className="text-muted-foreground">{job.role}</TableCell>
+                  <TableCell>
+                    <Badge variant="outline" className={STATUS_VARIANT[job.status]}>
+                      {STATUS_LABEL[job.status]}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">{job.location ?? "—"}</TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {salary(job.salaryMin, job.salaryMax)}
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {job.appliedAt
+                      ? new Date(job.appliedAt).toLocaleDateString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                        })
+                      : "—"}
+                  </TableCell>
+                  <TableCell onClick={(e) => e.stopPropagation()}>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-7 w-7 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-primary transition-all"
+                        onClick={() => handleRowClick(job)}
+                      >
+                        <Eye className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-7 w-7 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-red-600 transition-all"
+                        onClick={() => deleteJob(job.id)}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
+    </>
   );
 }
