@@ -118,7 +118,9 @@ export default function DashboardPage() {
           </div>
 
           <TabsContent value="kanban">
-            <Board />
+            <div className="-mx-4 sm:-mx-6">
+              <Board />
+            </div>
           </TabsContent>
 
           <TabsContent value="table">

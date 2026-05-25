@@ -1,25 +1,19 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { DragDropContext, type DropResult } from "@hello-pangea/dnd";
+import { DragDropContext, Droppable, type DropResult } from "@hello-pangea/dnd";
 import { useJobStore } from "@/store/useJobStore";
+import { useKanbanStore } from "@/store/useKanbanStore";
 import { Column } from "./Column";
 import { JobDetailsSheet } from "../dashboard/JobDetailsSheet";
 import type { Status, JobApplication } from "@/lib/types";
-
-const COLUMNS: { status: Status; label: string; color: string; dot: string }[] = [
-  { status: "WISHLIST",     label: "Wishlist",     color: "border-t-slate-400",   dot: "bg-slate-400"   },
-  { status: "APPLIED",      label: "Applied",      color: "border-t-blue-500",    dot: "bg-blue-500"    },
-  { status: "INTERVIEWING", label: "Interviewing", color: "border-t-violet-500",  dot: "bg-violet-500"  },
-  { status: "OFFERED",      label: "Offered",      color: "border-t-emerald-500", dot: "bg-emerald-500" },
-  { status: "REJECTED",     label: "Rejected",     color: "border-t-red-500",     dot: "bg-red-500"     },
-  { status: "GHOSTED",      label: "Ghosted",      color: "border-t-orange-400",  dot: "bg-orange-400"  },
-];
 
 export function Board() {
   const [isMounted, setIsMounted] = useState(false);
   const jobs = useJobStore((s) => s.jobs);
   const updateJobStatus = useJobStore((s) => s.updateJobStatus);
+  const kanbanColumns = useKanbanStore((s) => s.kanbanColumns);
+  const reorderColumns = useKanbanStore((s) => s.reorderColumns);
 
   const [selectedJob, setSelectedJob] = useState<JobApplication | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -30,7 +24,18 @@ export function Board() {
 
   function onDragEnd(result: DropResult) {
     if (!result.destination) return;
-    updateJobStatus(result.draggableId, result.destination.droppableId as Status);
+
+    // Column reorder
+    if (result.type === "column") {
+      if (result.source.index === result.destination.index) return;
+      reorderColumns(result.source.index, result.destination.index);
+      return;
+    }
+
+    // Card move between columns
+    if (result.source.droppableId !== result.destination.droppableId) {
+      updateJobStatus(result.draggableId, result.destination.droppableId as Status);
+    }
   }
 
   function handleJobClick(job: JobApplication) {
@@ -38,11 +43,15 @@ export function Board() {
     setSheetOpen(true);
   }
 
+  // SSR-safe skeleton — uses static column count so it matches persisted order length
   if (!isMounted) {
     return (
-      <div className="flex gap-4 overflow-x-auto pb-4">
-        {COLUMNS.map((col) => (
-          <div key={col.status} className="shrink-0 w-64 h-48 rounded-xl border border-t-4 border-t-muted bg-muted/20 animate-pulse" />
+      <div className="flex gap-4 overflow-x-auto px-4 sm:px-6 pb-6">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div
+            key={i}
+            className="shrink-0 w-[272px] h-48 rounded-xl border border-t-4 border-t-muted bg-muted/20 animate-pulse"
+          />
         ))}
       </div>
     );
@@ -50,26 +59,40 @@ export function Board() {
 
   return (
     <>
-      <JobDetailsSheet 
-        job={selectedJob} 
-        open={sheetOpen} 
-        onOpenChange={setSheetOpen} 
+      <JobDetailsSheet
+        job={selectedJob}
+        open={sheetOpen}
+        onOpenChange={setSheetOpen}
       />
-      
+
       <DragDropContext onDragEnd={onDragEnd}>
-        <div className="flex gap-4 overflow-x-auto pb-4 min-h-[calc(100vh-320px)]">
-          {COLUMNS.map((col) => (
-            <Column
-              key={col.status}
-              droppableId={col.status}
-              label={col.label}
-              color={col.color}
-              dot={col.dot}
-              jobs={jobs.filter((j) => j.status === col.status)}
-              onJobClick={handleJobClick}
-            />
-          ))}
-        </div>
+        <Droppable
+          droppableId="board-columns"
+          type="column"
+          direction="horizontal"
+        >
+          {(provided) => (
+            <div
+              ref={provided.innerRef}
+              {...provided.droppableProps}
+              className="flex gap-4 overflow-x-auto px-4 sm:px-6 pb-6 min-h-[calc(100vh-320px)]"
+            >
+              {kanbanColumns.map((col, index) => (
+                <Column
+                  key={col.status}
+                  index={index}
+                  droppableId={col.status}
+                  label={col.label}
+                  color={col.color}
+                  dot={col.dot}
+                  jobs={jobs.filter((j) => j.status === col.status)}
+                  onJobClick={handleJobClick}
+                />
+              ))}
+              {provided.placeholder}
+            </div>
+          )}
+        </Droppable>
       </DragDropContext>
     </>
   );
