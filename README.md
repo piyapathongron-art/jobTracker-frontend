@@ -16,12 +16,13 @@ A lightweight, user-friendly personal job tracking platform designed to replace 
 
 This project utilizes a modern full-stack ecosystem. When generating code or suggesting architectural patterns, please adhere to the following stack:
 
-- **Frontend:** React.js / Next.js (or Vite), styled with Tailwind CSS.
+- **Frontend:** Next.js 16 (App Router), Zustand (State), Axios (Data Fetching), styled with Tailwind CSS v4.
 - **UI Components:** shadcn/ui for accessible, highly customizable, and premium UI components. Priority should be given to Radix UI primitives utilized by shadcn.
-- **Backend:** Node.js with Express framework.
-- **Database & ORM:** Relational database managed via Prisma ORM.
-- **AI Integration:** Google Generative AI (Gemini SDK) for parsing, generating, and tailoring text.
-- **Deployment:** Vercel (Frontend/Fullstack) or Render (Backend).
+- **Backend:** Node.js with Express framework, jsonwebtoken for Auth.
+- **Validation:** Zod (shared across Frontend and Backend).
+- **Database & ORM:** PostgreSQL managed via Prisma ORM.
+- **AI Integration:** Google Generative AI (Gemini SDK) for parsing, generating, and tailoring text (runs on Backend).
+- **Deployment:** Vercel (Frontend) and Render (Backend).
 
 ---
 

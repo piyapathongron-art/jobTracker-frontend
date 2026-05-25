@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -69,11 +70,11 @@ export default function Home() {
             </a>
           </nav>
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="sm" className="cursor-pointer">
-              Sign in
+            <Button asChild variant="ghost" size="sm" className="cursor-pointer">
+              <Link href="/login">Sign in</Link>
             </Button>
-            <Button size="sm" className="cursor-pointer">
-              Get started
+            <Button asChild size="sm" className="cursor-pointer">
+              <Link href="/register">Get started</Link>
             </Button>
           </div>
         </div>
@@ -98,17 +99,17 @@ export default function Home() {
           </p>
 
           <div className="mt-10 flex flex-col sm:flex-row gap-3 justify-center">
-            <Button size="lg" className="cursor-pointer gap-2 text-base px-8">
-              Start tracking
-              <ArrowRight className="h-4 w-4" aria-hidden="true" />
+            <Button asChild size="lg" className="cursor-pointer gap-2 text-base px-8">
+              <Link href="/register">
+                Start tracking
+                <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              </Link>
             </Button>
-            <Button
-              variant="outline"
-              size="lg"
-              className="cursor-pointer text-base px-8"
-            >
-              <LayoutDashboard className="h-4 w-4 mr-2" aria-hidden="true" />
-              View dashboard
+            <Button asChild variant="outline" size="lg" className="cursor-pointer text-base px-8">
+              <Link href="/login">
+                <LayoutDashboard className="h-4 w-4 mr-2" aria-hidden="true" />
+                View dashboard
+              </Link>
             </Button>
           </div>
 
@@ -182,13 +183,11 @@ export default function Home() {
               Stop losing track of applications in spreadsheets. Start your
               tracker in under a minute.
             </p>
-            <Button
-              size="lg"
-              variant="secondary"
-              className="mt-8 cursor-pointer gap-2 text-base px-8"
-            >
-              Add your first job
-              <ArrowRight className="h-4 w-4" aria-hidden="true" />
+            <Button asChild size="lg" variant="secondary" className="mt-8 cursor-pointer gap-2 text-base px-8">
+              <Link href="/register">
+                Add your first job
+                <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              </Link>
             </Button>
           </div>
         </section>
