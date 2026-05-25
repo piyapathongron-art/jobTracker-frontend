@@ -10,6 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -19,7 +20,8 @@ import {
 } from "@/components/ui/select";
 import { useJobStore } from "@/store/useJobStore";
 import type { Status } from "@/lib/types";
-import { Loader2 } from "lucide-react";
+import { Loader2, Sparkles } from "lucide-react";
+import { api } from "@/lib/axios";
 
 const STATUSES: { value: Status; label: string }[] = [
   { value: "WISHLIST",     label: "Wishlist"     },
@@ -43,6 +45,27 @@ export function AddJobDialog({ open, onOpenChange }: Props) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // AI Parser state
+  const [jdText, setJdText] = useState("");
+  const [isParsing, setIsParsing] = useState(false);
+
+  async function handleAIParse() {
+    if (!jdText.trim()) return;
+    setIsParsing(true);
+    setError(null);
+    try {
+      const res = await api.post("/ai/parse-jd", { text: jdText });
+      const data = res.data;
+      if (data.company) setCompany(data.company);
+      if (data.role) setRole(data.role);
+      // Notes field can be added later if needed, but for now we auto-fill the basics
+    } catch (err: any) {
+      setError(err.response?.data?.error || "AI parsing failed.");
+    } finally {
+      setIsParsing(false);
+    }
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!company.trim() || !role.trim()) return;
@@ -61,6 +84,7 @@ export function AddJobDialog({ open, onOpenChange }: Props) {
       });
       setCompany("");
       setRole("");
+      setJdText("");
       setStatus("WISHLIST");
       onOpenChange(false);
     } catch {
@@ -82,6 +106,43 @@ export function AddJobDialog({ open, onOpenChange }: Props) {
               {error}
             </p>
           )}
+
+          {/* AI Parser Section */}
+          <div className="space-y-1.5 p-3 bg-muted/50 rounded-lg border border-dashed border-border mb-4">
+            <Label htmlFor="jdText" className="text-xs font-semibold flex items-center gap-1.5 text-primary">
+              <Sparkles className="h-3 w-3" />
+              AI Auto-Fill
+            </Label>
+            <Textarea
+              id="jdText"
+              placeholder="Paste Job Description here..."
+              className="text-xs min-h-[80px] bg-background"
+              value={jdText}
+              onChange={(e) => setJdText(e.target.value)}
+              disabled={isParsing || submitting}
+            />
+            <Button
+              type="button"
+              size="sm"
+              variant="secondary"
+              className="w-full mt-2 h-8 text-xs gap-1.5"
+              onClick={handleAIParse}
+              disabled={isParsing || !jdText.trim() || submitting}
+            >
+              {isParsing ? (
+                <>
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                  Analyzing JD...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-3 w-3" />
+                  Parse with Gemini
+                </>
+              )}
+            </Button>
+          </div>
+
           <div className="space-y-1.5">
             <Label htmlFor="company">Company *</Label>
             <Input
