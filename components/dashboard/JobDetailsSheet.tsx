@@ -10,19 +10,30 @@ import {
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { api } from "@/lib/axios";
 import type { JobApplication } from "@/lib/types";
-import { 
-  Loader2, 
-  Sparkles, 
-  Building2, 
-  MapPin, 
-  DollarSign, 
-  Calendar, 
+import {
+  Loader2,
+  Sparkles,
+  Building2,
+  MapPin,
+  DollarSign,
+  Calendar,
   Link as LinkIcon,
   AlertCircle,
   Pencil,
-  CheckCircle2
+  CheckCircle2,
+  BrainCircuit,
+  FileText,
+  LayoutDashboard,
+  Lightbulb,
 } from "lucide-react";
 import { JobForm } from "./JobForm";
 import { useJobStore } from "@/store/useJobStore";
@@ -33,27 +44,77 @@ interface Props {
   onOpenChange: (open: boolean) => void;
 }
 
+interface InterviewQuestion {
+  question: string;
+  starHint: string;
+}
+
 export function JobDetailsSheet({ job, open, onOpenChange }: Props) {
   const updateJobDetails = useJobStore((s) => s.updateJobDetails);
   const [isEditing, setIsEditing] = useState(false);
+
+  // Cover Letter state
   const [isTailoring, setIsTailoring] = useState(false);
-  const [tailoredData, setTailoredData] = useState<{ coverLetter: string; keywordGaps: string[] } | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [tailoredData, setTailoredData] = useState<{
+    coverLetter: string;
+    keywordGaps: string[];
+  } | null>(null);
+  const [tailorError, setTailorError] = useState<string | null>(null);
+
+  // Interview Prep state
+  const [isGeneratingQuestions, setIsGeneratingQuestions] = useState(false);
+  const [interviewQuestions, setInterviewQuestions] = useState<
+    InterviewQuestion[] | null
+  >(null);
+  const [interviewError, setInterviewError] = useState<string | null>(null);
+
+  // Edit state
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   if (!job) return null;
 
+  function handleSheetClose(v: boolean) {
+    onOpenChange(v);
+    if (!v) {
+      setIsEditing(false);
+      setTailoredData(null);
+      setSuccessMessage(null);
+      setInterviewQuestions(null);
+      setTailorError(null);
+      setInterviewError(null);
+    }
+  }
+
   async function handleTailor() {
     if (!job) return;
     setIsTailoring(true);
-    setError(null);
+    setTailorError(null);
     try {
       const res = await api.post("/api/ai/tailor", { jobId: job.id });
       setTailoredData(res.data);
     } catch (err: any) {
-      setError(err.response?.data?.error || "Failed to generate tailored content.");
+      setTailorError(
+        err.response?.data?.error || "Failed to generate tailored content."
+      );
     } finally {
       setIsTailoring(false);
+    }
+  }
+
+  async function handleGenerateQuestions() {
+    if (!job) return;
+    setIsGeneratingQuestions(true);
+    setInterviewError(null);
+    try {
+      const res = await api.post("/api/ai/interview", { jobId: job.id });
+      setInterviewQuestions(res.data.questions);
+    } catch (err: any) {
+      setInterviewError(
+        err.response?.data?.error ||
+          "Failed to generate interview questions. Please try again."
+      );
+    } finally {
+      setIsGeneratingQuestions(false);
     }
   }
 
@@ -66,18 +127,14 @@ export function JobDetailsSheet({ job, open, onOpenChange }: Props) {
   }
 
   return (
-    <Sheet open={open} onOpenChange={(v) => {
-      onOpenChange(v);
-      if (!v) {
-        setIsEditing(false);
-        setTailoredData(null);
-        setSuccessMessage(null);
-      }
-    }}>
+    <Sheet open={open} onOpenChange={handleSheetClose}>
       <SheetContent className="sm:max-w-2xl overflow-y-auto">
         <SheetHeader className="space-y-4">
           <div className="flex items-center justify-between">
-            <Badge variant="outline" className="rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider">
+            <Badge
+              variant="outline"
+              className="rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider"
+            >
               {job.status}
             </Badge>
             <div className="flex items-center gap-2">
@@ -86,9 +143,9 @@ export function JobDetailsSheet({ job, open, onOpenChange }: Props) {
                   <CheckCircle2 className="h-3 w-3" /> {successMessage}
                 </span>
               )}
-              <Button 
-                variant="ghost" 
-                size="sm" 
+              <Button
+                variant="ghost"
+                size="sm"
                 className="h-8 gap-1.5 text-muted-foreground hover:text-foreground"
                 onClick={() => setIsEditing(!isEditing)}
               >
@@ -97,6 +154,7 @@ export function JobDetailsSheet({ job, open, onOpenChange }: Props) {
               </Button>
             </div>
           </div>
+
           {!isEditing && (
             <div>
               <SheetTitle className="text-2xl font-bold">{job.role}</SheetTitle>
@@ -108,76 +166,114 @@ export function JobDetailsSheet({ job, open, onOpenChange }: Props) {
           )}
         </SheetHeader>
 
-        <div className="mt-8 space-y-8">
+        <div className="mt-6">
           {isEditing ? (
             <div className="animate-in fade-in slide-in-from-top-2 duration-300">
-              <JobForm 
-                initialData={job} 
-                onSubmit={handleEditSubmit} 
-                onCancel={() => setIsEditing(false)} 
+              <JobForm
+                initialData={job}
+                onSubmit={handleEditSubmit}
+                onCancel={() => setIsEditing(false)}
               />
             </div>
           ) : (
-            <>
-              {/* Job Info Grid */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <p className="text-xs font-medium text-muted-foreground uppercase flex items-center gap-1">
-                    <MapPin className="h-3 w-3" /> Location
-                  </p>
-                  <p className="text-sm font-semibold">{job.location || "Not specified"}</p>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-xs font-medium text-muted-foreground uppercase flex items-center gap-1">
-                    <DollarSign className="h-3 w-3" /> Salary
-                  </p>
-                  <p className="text-sm font-semibold">
-                    {job.salaryMin ? `$${(job.salaryMin/1000).toFixed(0)}k` : ""}
-                    {job.salaryMin && job.salaryMax ? " - " : ""}
-                    {job.salaryMax ? `$${(job.salaryMax/1000).toFixed(0)}k` : ""}
-                    {!job.salaryMin && !job.salaryMax ? "Not specified" : ""}
-                  </p>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-xs font-medium text-muted-foreground uppercase flex items-center gap-1">
-                    <Calendar className="h-3 w-3" /> Applied On
-                  </p>
-                  <p className="text-sm font-semibold">
-                    {job.appliedAt ? new Date(job.appliedAt).toLocaleDateString() : "Not applied yet"}
-                  </p>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-xs font-medium text-muted-foreground uppercase flex items-center gap-1">
-                    <LinkIcon className="h-3 w-3" /> Job Link
-                  </p>
-                  {job.url ? (
-                    <a href={job.url} target="_blank" rel="noreferrer" className="text-sm font-semibold text-primary hover:underline flex items-center gap-1">
-                      View Posting <LinkIcon className="h-3 w-3" />
-                    </a>
-                  ) : (
-                    <p className="text-sm font-semibold">No link</p>
-                  )}
-                </div>
-              </div>
+            <Tabs defaultValue="overview">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="overview" className="gap-1.5 text-xs">
+                  <LayoutDashboard className="h-3.5 w-3.5" />
+                  Overview
+                </TabsTrigger>
+                <TabsTrigger value="cover-letter" className="gap-1.5 text-xs">
+                  <FileText className="h-3.5 w-3.5" />
+                  Cover Letter
+                </TabsTrigger>
+                <TabsTrigger value="interview-prep" className="gap-1.5 text-xs">
+                  <BrainCircuit className="h-3.5 w-3.5" />
+                  Interview Prep
+                </TabsTrigger>
+              </TabsList>
 
-              <div className="space-y-2">
-                <p className="text-xs font-medium text-muted-foreground uppercase">Notes / Tech Stack</p>
-                <div className="p-4 rounded-lg bg-muted/50 border border-border text-sm whitespace-pre-wrap leading-relaxed">
-                  {job.notes || "No additional details provided."}
+              {/* ── Overview Tab ── */}
+              <TabsContent value="overview" className="mt-6 space-y-6">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <p className="text-xs font-medium text-muted-foreground uppercase flex items-center gap-1">
+                      <MapPin className="h-3 w-3" /> Location
+                    </p>
+                    <p className="text-sm font-semibold">
+                      {job.location || "Not specified"}
+                    </p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs font-medium text-muted-foreground uppercase flex items-center gap-1">
+                      <DollarSign className="h-3 w-3" /> Salary
+                    </p>
+                    <p className="text-sm font-semibold">
+                      {job.salaryMin
+                        ? `$${(job.salaryMin / 1000).toFixed(0)}k`
+                        : ""}
+                      {job.salaryMin && job.salaryMax ? " – " : ""}
+                      {job.salaryMax
+                        ? `$${(job.salaryMax / 1000).toFixed(0)}k`
+                        : ""}
+                      {!job.salaryMin && !job.salaryMax ? "Not specified" : ""}
+                    </p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs font-medium text-muted-foreground uppercase flex items-center gap-1">
+                      <Calendar className="h-3 w-3" /> Applied On
+                    </p>
+                    <p className="text-sm font-semibold">
+                      {job.appliedAt
+                        ? new Date(job.appliedAt).toLocaleDateString()
+                        : "Not applied yet"}
+                    </p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs font-medium text-muted-foreground uppercase flex items-center gap-1">
+                      <LinkIcon className="h-3 w-3" /> Job Link
+                    </p>
+                    {job.url ? (
+                      <a
+                        href={job.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-sm font-semibold text-primary hover:underline flex items-center gap-1"
+                      >
+                        View Posting <LinkIcon className="h-3 w-3" />
+                      </a>
+                    ) : (
+                      <p className="text-sm font-semibold">No link</p>
+                    )}
+                  </div>
                 </div>
-              </div>
 
-              <div className="pt-4 border-t border-border space-y-6">
+                <div className="space-y-2">
+                  <p className="text-xs font-medium text-muted-foreground uppercase">
+                    Notes / Tech Stack
+                  </p>
+                  <div className="p-4 rounded-lg bg-muted/50 border border-border text-sm whitespace-pre-wrap leading-relaxed">
+                    {job.notes || "No additional details provided."}
+                  </div>
+                </div>
+              </TabsContent>
+
+              {/* ── Cover Letter Tab ── */}
+              <TabsContent value="cover-letter" className="mt-6 space-y-5">
                 <div className="flex items-center justify-between">
-                  <h3 className="font-bold flex items-center gap-2">
-                    <Sparkles className="h-4 w-4 text-primary" />
-                    AI Assistant
-                  </h3>
-                  <Button 
-                    onClick={handleTailor} 
+                  <div>
+                    <h3 className="font-semibold flex items-center gap-2 text-sm">
+                      <Sparkles className="h-4 w-4 text-primary" />
+                      Resume & Cover Letter Tailor
+                    </h3>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Compares your master resume against this job's details.
+                    </p>
+                  </div>
+                  <Button
+                    onClick={handleTailor}
                     disabled={isTailoring}
                     size="sm"
-                    className="gap-1.5"
+                    className="gap-1.5 shrink-0"
                   >
                     {isTailoring ? (
                       <>
@@ -187,26 +283,32 @@ export function JobDetailsSheet({ job, open, onOpenChange }: Props) {
                     ) : (
                       <>
                         <Sparkles className="h-4 w-4" />
-                        Tailor Resume & Cover Letter
+                        {tailoredData ? "Regenerate" : "Generate"}
                       </>
                     )}
                   </Button>
                 </div>
 
-                {error && (
+                {tailorError && (
                   <div className="p-4 rounded-lg bg-red-50 text-red-700 border border-red-200 text-sm flex items-start gap-2">
                     <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
-                    {error}
+                    {tailorError}
                   </div>
                 )}
 
                 {tailoredData && (
                   <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
                     <div className="space-y-3">
-                      <p className="text-xs font-semibold uppercase text-primary">Keyword Gaps</p>
+                      <p className="text-xs font-semibold uppercase text-primary">
+                        Keyword Gaps
+                      </p>
                       <div className="flex flex-wrap gap-2">
                         {tailoredData.keywordGaps.map((gap, i) => (
-                          <Badge key={i} variant="secondary" className="bg-orange-50 text-orange-700 border-orange-100 px-2 py-1">
+                          <Badge
+                            key={i}
+                            variant="secondary"
+                            className="bg-orange-50 text-orange-700 border-orange-100 px-2 py-1"
+                          >
                             {gap}
                           </Badge>
                         ))}
@@ -215,10 +317,19 @@ export function JobDetailsSheet({ job, open, onOpenChange }: Props) {
 
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
-                        <p className="text-xs font-semibold uppercase text-primary">Tailored Cover Letter</p>
-                        <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => {
-                          navigator.clipboard.writeText(tailoredData.coverLetter);
-                        }}>
+                        <p className="text-xs font-semibold uppercase text-primary">
+                          Tailored Cover Letter
+                        </p>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 text-xs"
+                          onClick={() => {
+                            navigator.clipboard.writeText(
+                              tailoredData.coverLetter
+                            );
+                          }}
+                        >
                           Copy text
                         </Button>
                       </div>
@@ -228,8 +339,120 @@ export function JobDetailsSheet({ job, open, onOpenChange }: Props) {
                     </div>
                   </div>
                 )}
-              </div>
-            </>
+
+                {!tailoredData && !isTailoring && (
+                  <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground space-y-2">
+                    <FileText className="h-10 w-10 opacity-20" />
+                    <p className="text-sm">
+                      Click <span className="font-medium">Generate</span> to
+                      tailor your resume and create a cover letter for this
+                      role.
+                    </p>
+                    <p className="text-xs opacity-70">
+                      Requires a master resume saved in your Profile settings.
+                    </p>
+                  </div>
+                )}
+              </TabsContent>
+
+              {/* ── Interview Prep Tab ── */}
+              <TabsContent value="interview-prep" className="mt-6 space-y-5">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-semibold flex items-center gap-2 text-sm">
+                      <BrainCircuit className="h-4 w-4 text-primary" />
+                      Interview Simulator
+                    </h3>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      AI-generated practice questions with STAR-method hints.
+                    </p>
+                  </div>
+                  <Button
+                    onClick={handleGenerateQuestions}
+                    disabled={isGeneratingQuestions}
+                    size="sm"
+                    className="gap-1.5 shrink-0"
+                  >
+                    {isGeneratingQuestions ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Generating...
+                      </>
+                    ) : (
+                      <>
+                        <BrainCircuit className="h-4 w-4" />
+                        {interviewQuestions
+                          ? "Regenerate"
+                          : "Generate Practice Questions"}
+                      </>
+                    )}
+                  </Button>
+                </div>
+
+                {interviewError && (
+                  <div className="p-4 rounded-lg bg-red-50 text-red-700 border border-red-200 text-sm flex items-start gap-2">
+                    <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+                    {interviewError}
+                  </div>
+                )}
+
+                {interviewQuestions && interviewQuestions.length > 0 && (
+                  <div className="animate-in fade-in slide-in-from-bottom-2 duration-300 space-y-3">
+                    <p className="text-xs font-semibold uppercase text-primary">
+                      Practice Questions
+                    </p>
+                    <Accordion type="single" collapsible className="space-y-2">
+                      {interviewQuestions.map((item, index) => (
+                        <AccordionItem
+                          key={index}
+                          value={`question-${index}`}
+                          className="border border-border rounded-lg px-4 data-[state=open]:bg-muted/30 transition-colors"
+                        >
+                          <AccordionTrigger className="text-sm font-medium text-left hover:no-underline py-4 gap-3">
+                            <span className="flex items-start gap-3">
+                              <span className="shrink-0 mt-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-primary text-[10px] font-bold">
+                                {index + 1}
+                              </span>
+                              {item.question}
+                            </span>
+                          </AccordionTrigger>
+                          <AccordionContent className="pb-4">
+                            <div className="mt-1 p-3 rounded-md bg-primary/5 border border-primary/10 space-y-1.5">
+                              <p className="text-xs font-semibold text-primary flex items-center gap-1.5">
+                                <Lightbulb className="h-3.5 w-3.5" />
+                                STAR Hint
+                              </p>
+                              <p className="text-xs text-muted-foreground leading-relaxed">
+                                {item.starHint}
+                              </p>
+                            </div>
+                          </AccordionContent>
+                        </AccordionItem>
+                      ))}
+                    </Accordion>
+                    <p className="text-[10px] text-muted-foreground text-center pt-1">
+                      Click each question to reveal the STAR-method hint.
+                    </p>
+                  </div>
+                )}
+
+                {!interviewQuestions && !isGeneratingQuestions && (
+                  <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground space-y-2">
+                    <BrainCircuit className="h-10 w-10 opacity-20" />
+                    <p className="text-sm">
+                      Click{" "}
+                      <span className="font-medium">
+                        Generate Practice Questions
+                      </span>{" "}
+                      to get tailored interview questions for this role.
+                    </p>
+                    <p className="text-xs opacity-70">
+                      Uses the role, company, and tech stack from your notes.
+                    </p>
+                  </div>
+                )}
+              </TabsContent>
+            </Tabs>
           )}
         </div>
       </SheetContent>
