@@ -2,7 +2,7 @@ import { create } from "zustand";
 import type { Status, JobApplication } from "@/lib/types";
 import { api } from "@/lib/axios";
 
-export type NewJob = Omit<JobApplication, "id" | "userId" | "createdAt" | "updatedAt" | "notes">;
+export type NewJob = Omit<JobApplication, "id" | "userId" | "createdAt" | "updatedAt">;
 
 interface JobState {
   jobs: JobApplication[];
@@ -11,6 +11,7 @@ interface JobState {
   fetchJobs: () => Promise<void>;
   addJob: (job: NewJob) => Promise<void>;
   updateJobStatus: (id: string, newStatus: Status) => Promise<void>;
+  updateJobDetails: (id: string, updates: Partial<JobApplication>) => Promise<void>;
   deleteJob: (id: string) => Promise<void>;
   clearError: () => void;
 }
@@ -55,6 +56,26 @@ export const useJobStore = create<JobState>((set, get) => ({
           error: "Failed to move card — change reverted.",
         }));
       }
+    }
+  },
+
+  updateJobDetails: async (id, updates) => {
+    const prevJob = get().jobs.find((j) => j.id === id);
+    if (!prevJob) return;
+
+    set((state) => ({
+      jobs: state.jobs.map((j) =>
+        j.id === id ? { ...j, ...updates, updatedAt: new Date().toISOString() } : j
+      ),
+    }));
+
+    try {
+      await api.patch(`/api/applications/${id}`, updates);
+    } catch {
+      set((state) => ({
+        jobs: state.jobs.map((j) => (j.id === id ? prevJob : j)),
+        error: "Failed to update job details — changes reverted.",
+      }));
     }
   },
 
