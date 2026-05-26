@@ -8,6 +8,16 @@ import { useAuthStore } from "@/store/useAuthStore";
 import { useLangStore } from "@/store/useLangStore";
 import { getDictionary } from "@/locales";
 
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
@@ -34,13 +44,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <span className="font-semibold text-foreground tracking-tight">JobTracker</span>
           </Link>
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center">
-                <User className="h-4 w-4 text-primary" />
-              </div>
-              <span className="hidden sm:inline">{user?.name ?? user?.email ?? "User"}</span>
-            </div>
-            
             <Button
               size="sm"
               variant="ghost"
@@ -57,22 +60,38 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </span>
             </Button>
 
-            <Link href="/dashboard/profile" passHref>
-              <Button size="sm" variant="ghost" className="cursor-pointer gap-1.5 text-muted-foreground hover:text-foreground">
-                <Settings className="h-4 w-4" />
-                <span className="hidden sm:inline">{t.nav.profile}</span>
-              </Button>
-            </Link>
-
-            <Button
-              size="sm"
-              variant="ghost"
-              className="cursor-pointer gap-1.5 text-muted-foreground hover:text-foreground"
-              onClick={handleSignOut}
-            >
-              <LogOut className="h-4 w-4" />
-              <span className="hidden sm:inline">{t.nav.logout}</span>
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="relative h-8 rounded-full flex items-center gap-2 pl-2 pr-4 hover:bg-muted/50 border border-transparent hover:border-border transition-colors">
+                  <Avatar className="h-6 w-6">
+                    <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">
+                      {(user?.name?.[0] ?? user?.email?.[0] ?? "U").toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="text-sm font-medium">{user?.name ?? user?.email ?? "User"}</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel className="font-normal">
+                  <div className="flex flex-col space-y-1">
+                    <p className="text-sm font-medium leading-none">{user?.name ?? "User"}</p>
+                    <p className="text-xs leading-none text-muted-foreground">{user?.email}</p>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild className="cursor-pointer">
+                  <Link href="/dashboard/profile" className="w-full flex items-center">
+                    <Settings className="mr-2 h-4 w-4" />
+                    <span>{t.nav.profile}</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem className="cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50" onClick={handleSignOut}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>{t.nav.logout}</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </header>
