@@ -10,6 +10,8 @@ import { JobTable } from "@/components/dashboard/JobTable";
 import { AddJobDialog } from "@/components/dashboard/AddJobDialog";
 import { useJobStore } from "@/store/useJobStore";
 import { useAuthStore } from "@/store/useAuthStore";
+import { useLangStore } from "@/store/useLangStore";
+import { getDictionary } from "@/locales";
 import {
   BriefcaseBusiness,
   LayoutDashboard,
@@ -26,6 +28,8 @@ const ACTIVE: Status[] = ["APPLIED", "INTERVIEWING", "OFFERED"];
 export default function DashboardPage() {
   const router = useRouter();
   const token = useAuthStore((s) => s.token);
+  const lang = useLangStore((s) => s.lang);
+  const t = getDictionary(lang);
   const [dialogOpen, setDialogOpen] = useState(false);
 
   const jobs = useJobStore((s) => s.jobs);
@@ -64,9 +68,9 @@ export default function DashboardPage() {
 
       <div className="grid grid-cols-3 gap-4 mb-8">
         {[
-          { label: "Total Applications", value: total,  icon: LayoutDashboard  },
-          { label: "Active Pipelines",   value: active, icon: BriefcaseBusiness },
-          { label: "Offers Received",    value: offers, icon: Trophy            },
+          { label: t.dashboard.statsTotal,  value: total,  icon: LayoutDashboard  },
+          { label: t.dashboard.statsActive, value: active, icon: BriefcaseBusiness },
+          { label: t.dashboard.statsOffers, value: offers, icon: Trophy            },
         ].map(({ label, value, icon: Icon }) => (
           <Card key={label} className="border-border">
             <CardContent className="pt-4 pb-4">
@@ -89,21 +93,21 @@ export default function DashboardPage() {
       {isLoading ? (
         <div className="flex items-center justify-center py-24 text-muted-foreground">
           <Loader2 className="h-5 w-5 animate-spin mr-2" />
-          Loading applications…
+          {t.dashboard.loading}
         </div>
       ) : (
         <Tabs defaultValue="kanban">
           <div className="flex items-center justify-between mb-4">
-            <h1 className="text-xl font-bold text-foreground tracking-tight">My Applications</h1>
+            <h1 className="text-xl font-bold text-foreground tracking-tight">{t.dashboard.title}</h1>
             <div className="flex items-center gap-2">
               <TabsList>
                 <TabsTrigger value="kanban" className="gap-1.5 cursor-pointer">
                   <LayoutDashboard className="h-4 w-4" />
-                  Kanban
+                  {t.dashboard.tabKanban}
                 </TabsTrigger>
                 <TabsTrigger value="table" className="gap-1.5 cursor-pointer">
                   <Table2 className="h-4 w-4" />
-                  Table
+                  {t.dashboard.tabTable}
                 </TabsTrigger>
               </TabsList>
               <Button
@@ -112,7 +116,7 @@ export default function DashboardPage() {
                 onClick={() => setDialogOpen(true)}
               >
                 <Plus className="h-4 w-4" />
-                Add New Job
+                {t.dashboard.addJob}
               </Button>
             </div>
           </div>

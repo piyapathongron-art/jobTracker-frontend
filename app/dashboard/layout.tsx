@@ -2,18 +2,27 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { BriefcaseBusiness, LogOut, User, Settings } from "lucide-react";
+import { BriefcaseBusiness, LogOut, User, Settings, Languages } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/store/useAuthStore";
+import { useLangStore } from "@/store/useLangStore";
+import { getDictionary } from "@/locales";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
   const clearAuth = useAuthStore((s) => s.clearAuth);
+  const lang = useLangStore((s) => s.lang);
+  const setLang = useLangStore((s) => s.setLang);
+  const t = getDictionary(lang);
 
   function handleSignOut() {
     clearAuth();
     router.replace("/");
+  }
+
+  function toggleLang() {
+    setLang(lang === "en" ? "th" : "en");
   }
 
   return (
@@ -32,10 +41,26 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <span className="hidden sm:inline">{user?.name ?? user?.email ?? "User"}</span>
             </div>
             
+            <Button
+              size="sm"
+              variant="ghost"
+              className="cursor-pointer gap-1.5 text-muted-foreground hover:text-foreground font-semibold"
+              onClick={toggleLang}
+              aria-label={t.nav.language}
+              title={t.nav.language}
+            >
+              <Languages className="h-4 w-4" />
+              <span className="text-xs">
+                <span className={lang === "en" ? "text-primary" : ""}>EN</span>
+                <span className="mx-1 opacity-40">|</span>
+                <span className={lang === "th" ? "text-primary" : ""}>TH</span>
+              </span>
+            </Button>
+
             <Link href="/dashboard/profile" passHref>
               <Button size="sm" variant="ghost" className="cursor-pointer gap-1.5 text-muted-foreground hover:text-foreground">
                 <Settings className="h-4 w-4" />
-                <span className="hidden sm:inline">Profile</span>
+                <span className="hidden sm:inline">{t.nav.profile}</span>
               </Button>
             </Link>
 
@@ -46,7 +71,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               onClick={handleSignOut}
             >
               <LogOut className="h-4 w-4" />
-              <span className="hidden sm:inline">Log out</span>
+              <span className="hidden sm:inline">{t.nav.logout}</span>
             </Button>
           </div>
         </div>

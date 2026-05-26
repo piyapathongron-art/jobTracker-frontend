@@ -47,6 +47,8 @@ import {
 } from "lucide-react";
 import { JobForm } from "./JobForm";
 import { useJobStore } from "@/store/useJobStore";
+import { useLangStore } from "@/store/useLangStore";
+import { getDictionary } from "@/locales";
 
 interface Props {
   job: JobApplication | null;
@@ -60,8 +62,16 @@ interface InterviewQuestion {
 }
 
 interface DraftedEmail {
-  subject: string;
-  body: string;
+  subjectEn: string;
+  bodyEn: string;
+  subjectTh: string;
+  bodyTh: string;
+}
+
+interface TailoredData {
+  coverLetterEn: string;
+  coverLetterTh: string;
+  missingKeywords: string[];
 }
 
 const EMAIL_TYPES = [
@@ -75,15 +85,17 @@ type EmailType = (typeof EMAIL_TYPES)[number];
 
 export function JobDetailsSheet({ job, open, onOpenChange }: Props) {
   const updateJobDetails = useJobStore((s) => s.updateJobDetails);
+  const lang = useLangStore((s) => s.lang);
+  const t = getDictionary(lang);
   const [isEditing, setIsEditing] = useState(false);
 
   // Cover Letter state
   const [isTailoring, setIsTailoring] = useState(false);
-  const [tailoredData, setTailoredData] = useState<{
-    coverLetter: string;
-    keywordGaps: string[];
-  } | null>(null);
+  const [tailoredData, setTailoredData] = useState<TailoredData | null>(null);
   const [tailorError, setTailorError] = useState<string | null>(null);
+  const [coverCopied, setCoverCopied] = useState<"en" | "th" | null>(null);
+  const [activeCoverTab, setActiveCoverTab] = useState<"en" | "th">("en");
+  const [activeEmailTab, setActiveEmailTab] = useState<"en" | "th">("en");
 
   // Interview Prep state
   const [isGeneratingQuestions, setIsGeneratingQuestions] = useState(false);
@@ -142,7 +154,7 @@ export function JobDetailsSheet({ job, open, onOpenChange }: Props) {
     setIsGeneratingQuestions(true);
     setInterviewError(null);
     try {
-      const res = await api.post("/api/ai/interview", { jobId: job.id });
+      const res = await api.post("/api/ai/interview", { jobId: job.id, lang });
       setInterviewQuestions(res.data.questions);
     } catch (err: any) {
       setInterviewError(
@@ -178,9 +190,18 @@ export function JobDetailsSheet({ job, open, onOpenChange }: Props) {
 
   function handleCopyBody() {
     if (!draftedEmail) return;
-    navigator.clipboard.writeText(draftedEmail.body);
+    const body = activeEmailTab === "th" ? draftedEmail.bodyTh : draftedEmail.bodyEn;
+    navigator.clipboard.writeText(body);
     setBodyCopied(true);
     setTimeout(() => setBodyCopied(false), 2000);
+  }
+
+  function handleCopyCover(which: "en" | "th") {
+    if (!tailoredData) return;
+    const text = which === "th" ? tailoredData.coverLetterTh : tailoredData.coverLetterEn;
+    navigator.clipboard.writeText(text);
+    setCoverCopied(which);
+    setTimeout(() => setCoverCopied(null), 2000);
   }
 
   async function handleEditSubmit(data: any) {
@@ -372,7 +393,7 @@ export function JobDetailsSheet({ job, open, onOpenChange }: Props) {
                         Keyword Gaps
                       </p>
                       <div className="flex flex-wrap gap-2">
-                        {tailoredData.keywordGaps.map((gap, i) => (
+                        {tailoredData.missingKeywords.map((gap, i) => (
                           <Badge
                             key={i}
                             variant="secondary"
@@ -385,26 +406,49 @@ export function JobDetailsSheet({ job, open, onOpenChange }: Props) {
                     </div>
 
                     <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <p className="text-xs font-semibold uppercase text-primary">
-                          Tailored Cover Letter
-                        </p>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-7 text-xs"
-                          onClick={() => {
-                            navigator.clipboard.writeText(
-                              tailoredData.coverLetter
-                            );
-                          }}
-                        >
-                          Copy text
-                        </Button>
-                      </div>
-                      <div className="p-5 rounded-lg border border-border bg-background text-sm leading-loose whitespace-pre-wrap shadow-sm">
-                        {tailoredData.coverLetter}
-                      </div>
+                      <p className="text-xs font-semibold uppercase text-primary">
+                        Tailored Cover Letter
+                      </p>
+                      <Tabs
+                        value={activeCoverTab}
+                        onValueChange={(v) => setActiveCoverTab(v as "en" | "th")}
+                        defaultValue="en"
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <TabsList className="grid w-full max-w-[260px] grid-cols-2">
+                            <TabsTrigger value="en" className="text-xs">{t.ai.english}</TabsTrigger>
+                            <TabsTrigger value="th" className="text-xs">{t.ai.thai}</TabsTrigger>
+                          </TabsList>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 gap-1.5 text-xs"
+                            onClick={() => handleCopyCover(activeCoverTab)}
+                          >
+                            {coverCopied === activeCoverTab ? (
+                              <>
+                                <Check className="h-3.5 w-3.5 text-green-600" />
+                                <span className="text-green-600">{t.buttons.copied}</span>
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="h-3.5 w-3.5" />
+                                {t.buttons.copy}
+                              </>
+                            )}
+                          </Button>
+                        </div>
+                        <TabsContent value="en" className="mt-3">
+                          <div className="p-5 rounded-lg border border-border bg-background text-sm leading-loose whitespace-pre-wrap shadow-sm">
+                            {tailoredData.coverLetterEn}
+                          </div>
+                        </TabsContent>
+                        <TabsContent value="th" className="mt-3">
+                          <div className="p-5 rounded-lg border border-border bg-background text-sm leading-loose whitespace-pre-wrap shadow-sm">
+                            {tailoredData.coverLetterTh}
+                          </div>
+                        </TabsContent>
+                      </Tabs>
                     </div>
                   </div>
                 )}
@@ -584,45 +628,64 @@ export function JobDetailsSheet({ job, open, onOpenChange }: Props) {
 
                 {draftedEmail && (
                   <div className="animate-in fade-in slide-in-from-bottom-2 duration-300 space-y-3">
-                    {/* Subject line */}
-                    <div className="space-y-1.5">
-                      <p className="text-xs font-semibold uppercase text-primary">
-                        Subject
-                      </p>
-                      <div className="px-4 py-2.5 rounded-lg border border-border bg-muted/40 text-sm font-medium">
-                        {draftedEmail.subject}
-                      </div>
-                    </div>
+                    <Tabs
+                      value={activeEmailTab}
+                      onValueChange={(v) => {
+                        setActiveEmailTab(v as "en" | "th");
+                        setBodyCopied(false);
+                      }}
+                      defaultValue="en"
+                    >
+                      <TabsList className="grid w-full max-w-[260px] grid-cols-2">
+                        <TabsTrigger value="en" className="text-xs">{t.ai.english}</TabsTrigger>
+                        <TabsTrigger value="th" className="text-xs">{t.ai.thai}</TabsTrigger>
+                      </TabsList>
 
-                    {/* Email body */}
-                    <div className="space-y-1.5">
-                      <div className="flex items-center justify-between">
-                        <p className="text-xs font-semibold uppercase text-primary">
-                          Email Body
-                        </p>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-7 gap-1.5 text-xs"
-                          onClick={handleCopyBody}
-                        >
-                          {bodyCopied ? (
-                            <>
-                              <Check className="h-3.5 w-3.5 text-green-600" />
-                              <span className="text-green-600">Copied!</span>
-                            </>
-                          ) : (
-                            <>
-                              <Copy className="h-3.5 w-3.5" />
-                              Copy Body
-                            </>
-                          )}
-                        </Button>
-                      </div>
-                      <div className="p-5 rounded-lg border border-border bg-background text-sm leading-loose whitespace-pre-wrap shadow-sm">
-                        {draftedEmail.body}
-                      </div>
-                    </div>
+                      {(["en", "th"] as const).map((tab) => {
+                        const subject = tab === "th" ? draftedEmail.subjectTh : draftedEmail.subjectEn;
+                        const body = tab === "th" ? draftedEmail.bodyTh : draftedEmail.bodyEn;
+                        return (
+                          <TabsContent key={tab} value={tab} className="mt-4 space-y-3">
+                            <div className="space-y-1.5">
+                              <p className="text-xs font-semibold uppercase text-primary">
+                                Subject
+                              </p>
+                              <div className="px-4 py-2.5 rounded-lg border border-border bg-muted/40 text-sm font-medium">
+                                {subject}
+                              </div>
+                            </div>
+                            <div className="space-y-1.5">
+                              <div className="flex items-center justify-between">
+                                <p className="text-xs font-semibold uppercase text-primary">
+                                  Email Body
+                                </p>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-7 gap-1.5 text-xs"
+                                  onClick={handleCopyBody}
+                                >
+                                  {bodyCopied ? (
+                                    <>
+                                      <Check className="h-3.5 w-3.5 text-green-600" />
+                                      <span className="text-green-600">{t.buttons.copied}</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Copy className="h-3.5 w-3.5" />
+                                      {t.buttons.copy}
+                                    </>
+                                  )}
+                                </Button>
+                              </div>
+                              <div className="p-5 rounded-lg border border-border bg-background text-sm leading-loose whitespace-pre-wrap shadow-sm">
+                                {body}
+                              </div>
+                            </div>
+                          </TabsContent>
+                        );
+                      })}
+                    </Tabs>
                   </div>
                 )}
 
