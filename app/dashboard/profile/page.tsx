@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Progress } from "@/components/ui/progress";
 import { api } from "@/lib/axios";
 import { useAuthStore } from "@/store/useAuthStore";
 import {
@@ -24,7 +25,10 @@ import {
   AlertCircle,
   ArrowLeft,
   User,
+  Zap,
 } from "lucide-react";
+
+const MAX_TOKENS = 100_000;
 
 export default function ProfilePage() {
   const token = useAuthStore((s) => s.token);
@@ -41,6 +45,7 @@ export default function ProfilePage() {
 
   // Resume state
   const [resume, setResume] = useState("");
+  const [tokenUsage, setTokenUsage] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [isSavingResume, setIsSavingResume] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -57,6 +62,7 @@ export default function ProfilePage() {
         const res = await api.get("/api/users/profile");
         setName(res.data.name || "");
         setResume(res.data.baseResume || "");
+        setTokenUsage(res.data.tokenUsage ?? 0);
       } catch (err) {
         console.error("Failed to fetch profile:", err);
       } finally {
@@ -126,6 +132,11 @@ export default function ProfilePage() {
         headers: { "Content-Type": "multipart/form-data" },
       });
       setResume(res.data.baseResume);
+      // Refresh quota after a Gemini call
+      try {
+        const profile = await api.get("/api/users/profile");
+        setTokenUsage(profile.data.tokenUsage ?? 0);
+      } catch {}
       setResumeMessage({
         type: "success",
         text: "Resume extracted and updated successfully!",
@@ -198,6 +209,64 @@ export default function ProfilePage() {
           </Button>
         </div>
       </div>
+
+      {/* ── Token Usage card ── */}
+      {(() => {
+        const pct = Math.min(100, (tokenUsage / MAX_TOKENS) * 100);
+        const isWarn = tokenUsage >= 80_000 && tokenUsage < MAX_TOKENS;
+        const isCritical = tokenUsage >= MAX_TOKENS;
+        const accent = isCritical
+          ? "text-red-600"
+          : isWarn
+          ? "text-amber-600"
+          : "text-primary";
+        const indicator = isCritical
+          ? "[&>div]:bg-red-500"
+          : isWarn
+          ? "[&>div]:bg-amber-500"
+          : "[&>div]:bg-primary";
+        return (
+          <Card className="border-border">
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <Zap className={`h-5 w-5 ${accent}`} />
+                <CardTitle>AI Token Usage</CardTitle>
+              </div>
+              <CardDescription>
+                You have a monthly cap of {MAX_TOKENS.toLocaleString()} tokens across all
+                AI features. Cached responses don't consume new tokens.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex items-baseline justify-between">
+                <p className={`text-2xl font-bold tabular-nums ${accent}`}>
+                  {tokenUsage.toLocaleString()}
+                  <span className="text-sm font-medium text-muted-foreground ml-1.5">
+                    / {MAX_TOKENS.toLocaleString()}
+                  </span>
+                </p>
+                <p className={`text-sm font-semibold tabular-nums ${accent}`}>
+                  {pct.toFixed(1)}%
+                </p>
+              </div>
+              <Progress value={pct} className={indicator} />
+              {isCritical && (
+                <div className="flex items-start gap-2 p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
+                  <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+                  You've reached your token limit. AI features are paused until your
+                  quota resets.
+                </div>
+              )}
+              {isWarn && (
+                <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-700 text-sm">
+                  <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+                  Heads up — you've used over 80% of your token allowance.
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        );
+      })()}
 
       {/* ── Display Name card ── */}
       <Card className="border-border">

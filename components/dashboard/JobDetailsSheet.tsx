@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Sheet,
   SheetContent,
@@ -48,6 +48,7 @@ import {
 import { JobForm } from "./JobForm";
 import { useJobStore } from "@/store/useJobStore";
 import { useLangStore } from "@/store/useLangStore";
+import { useAiCacheStore } from "@/store/useAiCacheStore";
 import { getDictionary } from "@/locales";
 
 interface Props {
@@ -57,8 +58,10 @@ interface Props {
 }
 
 interface InterviewQuestion {
-  question: string;
-  starHint: string;
+  questionEn: string;
+  starHintEn: string;
+  questionTh: string;
+  starHintTh: string;
 }
 
 interface DraftedEmail {
@@ -87,6 +90,10 @@ export function JobDetailsSheet({ job, open, onOpenChange }: Props) {
   const updateJobDetails = useJobStore((s) => s.updateJobDetails);
   const lang = useLangStore((s) => s.lang);
   const t = getDictionary(lang);
+  const jobCache = useAiCacheStore((s) => (job ? s.cache[job.id] : undefined));
+  const setCoverLetterCache = useAiCacheStore((s) => s.setCoverLetter);
+  const setInterviewCache = useAiCacheStore((s) => s.setInterview);
+  const setEmailCache = useAiCacheStore((s) => s.setEmail);
   const [isEditing, setIsEditing] = useState(false);
 
   // Cover Letter state
@@ -96,6 +103,7 @@ export function JobDetailsSheet({ job, open, onOpenChange }: Props) {
   const [coverCopied, setCoverCopied] = useState<"en" | "th" | null>(null);
   const [activeCoverTab, setActiveCoverTab] = useState<"en" | "th">("en");
   const [activeEmailTab, setActiveEmailTab] = useState<"en" | "th">("en");
+  const [activeInterviewTab, setActiveInterviewTab] = useState<"en" | "th">("en");
 
   // Interview Prep state
   const [isGeneratingQuestions, setIsGeneratingQuestions] = useState(false);
@@ -116,18 +124,29 @@ export function JobDetailsSheet({ job, open, onOpenChange }: Props) {
   // Edit state
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (!job) return;
+    setTailoredData(jobCache?.coverLetter ?? null);
+    setInterviewQuestions(jobCache?.interview?.questions ?? null);
+    const cachedEmail = jobCache?.emails?.[selectedEmailType];
+    setDraftedEmail(cachedEmail ?? null);
+    setTailorError(null);
+    setInterviewError(null);
+    setEmailError(null);
+    setBodyCopied(false);
+    setCoverCopied(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [job?.id]);
+
   if (!job) return null;
 
   function handleSheetClose(v: boolean) {
     onOpenChange(v);
     if (!v) {
       setIsEditing(false);
-      setTailoredData(null);
       setSuccessMessage(null);
-      setInterviewQuestions(null);
       setTailorError(null);
       setInterviewError(null);
-      setDraftedEmail(null);
       setEmailError(null);
       setBodyCopied(false);
     }
@@ -140,6 +159,7 @@ export function JobDetailsSheet({ job, open, onOpenChange }: Props) {
     try {
       const res = await api.post("/api/ai/tailor", { jobId: job.id });
       setTailoredData(res.data);
+      setCoverLetterCache(job.id, res.data);
     } catch (err: any) {
       setTailorError(
         err.response?.data?.error || "Failed to generate tailored content."
@@ -154,8 +174,9 @@ export function JobDetailsSheet({ job, open, onOpenChange }: Props) {
     setIsGeneratingQuestions(true);
     setInterviewError(null);
     try {
-      const res = await api.post("/api/ai/interview", { jobId: job.id, lang });
+      const res = await api.post("/api/ai/interview", { jobId: job.id });
       setInterviewQuestions(res.data.questions);
+      setInterviewCache(job.id, { questions: res.data.questions });
     } catch (err: any) {
       setInterviewError(
         err.response?.data?.error ||
@@ -178,6 +199,7 @@ export function JobDetailsSheet({ job, open, onOpenChange }: Props) {
         emailType: selectedEmailType,
       });
       setDraftedEmail(res.data);
+      setEmailCache(job.id, selectedEmailType, res.data);
     } catch (err: any) {
       setEmailError(
         err.response?.data?.error ||
@@ -514,35 +536,49 @@ export function JobDetailsSheet({ job, open, onOpenChange }: Props) {
                     <p className="text-xs font-semibold uppercase text-primary">
                       Practice Questions
                     </p>
-                    <Accordion type="single" collapsible className="space-y-2">
-                      {interviewQuestions.map((item, index) => (
-                        <AccordionItem
-                          key={index}
-                          value={`question-${index}`}
-                          className="border border-border rounded-lg px-4 data-[state=open]:bg-muted/30 transition-colors"
-                        >
-                          <AccordionTrigger className="text-sm font-medium text-left hover:no-underline py-4 gap-3">
-                            <span className="flex items-start gap-3">
-                              <span className="shrink-0 mt-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-primary text-[10px] font-bold">
-                                {index + 1}
-                              </span>
-                              {item.question}
-                            </span>
-                          </AccordionTrigger>
-                          <AccordionContent className="pb-4">
-                            <div className="mt-1 p-3 rounded-md bg-primary/5 border border-primary/10 space-y-1.5">
-                              <p className="text-xs font-semibold text-primary flex items-center gap-1.5">
-                                <Lightbulb className="h-3.5 w-3.5" />
-                                STAR Hint
-                              </p>
-                              <p className="text-xs text-muted-foreground leading-relaxed">
-                                {item.starHint}
-                              </p>
-                            </div>
-                          </AccordionContent>
-                        </AccordionItem>
+                    <Tabs
+                      value={activeInterviewTab}
+                      onValueChange={(v) => setActiveInterviewTab(v as "en" | "th")}
+                      defaultValue="en"
+                    >
+                      <TabsList className="grid w-full max-w-[260px] grid-cols-2">
+                        <TabsTrigger value="en" className="text-xs">{t.ai.english}</TabsTrigger>
+                        <TabsTrigger value="th" className="text-xs">{t.ai.thai}</TabsTrigger>
+                      </TabsList>
+                      {(["en", "th"] as const).map((tab) => (
+                        <TabsContent key={tab} value={tab} className="mt-3">
+                          <Accordion type="single" collapsible className="space-y-2">
+                            {interviewQuestions.map((item, index) => (
+                              <AccordionItem
+                                key={index}
+                                value={`question-${index}`}
+                                className="border border-border rounded-lg px-4 data-[state=open]:bg-muted/30 transition-colors"
+                              >
+                                <AccordionTrigger className="text-sm font-medium text-left hover:no-underline py-4 gap-3">
+                                  <span className="flex items-start gap-3">
+                                    <span className="shrink-0 mt-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-primary text-[10px] font-bold">
+                                      {index + 1}
+                                    </span>
+                                    {tab === "th" ? item.questionTh : item.questionEn}
+                                  </span>
+                                </AccordionTrigger>
+                                <AccordionContent className="pb-4">
+                                  <div className="mt-1 p-3 rounded-md bg-primary/5 border border-primary/10 space-y-1.5">
+                                    <p className="text-xs font-semibold text-primary flex items-center gap-1.5">
+                                      <Lightbulb className="h-3.5 w-3.5" />
+                                      STAR Hint
+                                    </p>
+                                    <p className="text-xs text-muted-foreground leading-relaxed">
+                                      {tab === "th" ? item.starHintTh : item.starHintEn}
+                                    </p>
+                                  </div>
+                                </AccordionContent>
+                              </AccordionItem>
+                            ))}
+                          </Accordion>
+                        </TabsContent>
                       ))}
-                    </Accordion>
+                    </Tabs>
                     <p className="text-[10px] text-muted-foreground text-center pt-1">
                       Click each question to reveal the STAR-method hint.
                     </p>
@@ -583,9 +619,11 @@ export function JobDetailsSheet({ job, open, onOpenChange }: Props) {
                   <Select
                     value={selectedEmailType}
                     onValueChange={(v) => {
-                      setSelectedEmailType(v as EmailType);
-                      setDraftedEmail(null);
+                      const next = v as EmailType;
+                      setSelectedEmailType(next);
+                      setDraftedEmail(jobCache?.emails?.[next] ?? null);
                       setEmailError(null);
+                      setBodyCopied(false);
                     }}
                   >
                     <SelectTrigger className="flex-1 text-sm">
