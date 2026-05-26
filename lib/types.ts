@@ -18,6 +18,8 @@ export interface JobApplication {
   salaryCurrency: string;
   salaryPeriod: string;
   location: string | null;
+  workMode: string;
+  jobDescription: string | null;
   notes: string | null;
   appliedAt: string | null;
   createdAt: string;
@@ -28,4 +30,6 @@ export interface AuthUser {
   id: string;
   name: string;
   email: string;
+  homeLocation?: string;
+  tokenUsage?: number;
 }

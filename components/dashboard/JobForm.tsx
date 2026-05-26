@@ -31,8 +31,14 @@ const STATUS_OPTIONS = [
   { value: "APPLIED",      label: "Applied",      dot: "bg-blue-500"   },
   { value: "INTERVIEWING", label: "Interviewing", dot: "bg-amber-400"  },
   { value: "OFFERED",      label: "Offered",      dot: "bg-green-500"  },
-  { value: "REJECTED",     label: "Rejected",     dot: "bg-red-500"    },
-  { value: "GHOSTED",      label: "Ghosted",      dot: "bg-gray-400"   },
+  { value: "REJECTED",     label: "Rejected"     },
+  { value: "GHOSTED",      label: "Ghosted"      },
+] as const;
+
+const WORK_MODE_OPTIONS = [
+  { value: "ONSITE",  label: "On-site" },
+  { value: "HYBRID",  label: "Hybrid"  },
+  { value: "REMOTE",  label: "Remote"  },
 ] as const;
 
 const CURRENCY_OPTIONS = [
@@ -71,6 +77,8 @@ const jobFormSchema = z.object({
   salaryCurrency: z.enum(["THB", "USD"]),
   salaryPeriod: z.enum(["MONTHLY", "YEARLY", "HOURLY"]),
   location: z.string().optional(),
+  workMode: z.enum(["ONSITE", "HYBRID", "REMOTE"]),
+  jobDescription: z.string().optional(),
   notes: z.string().optional(),
   appliedAt: z.string().optional(),
 });
@@ -97,6 +105,8 @@ export function JobForm({ initialData, onSubmit, onCancel, submitLabel = "Save" 
       salaryCurrency: (initialData?.salaryCurrency as "THB" | "USD") ?? "THB",
       salaryPeriod:   (initialData?.salaryPeriod as "MONTHLY" | "YEARLY" | "HOURLY") ?? "MONTHLY",
       location:       initialData?.location ?? "",
+      workMode:       (initialData?.workMode as JobFormValues["workMode"]) ?? "ONSITE",
+      jobDescription: initialData?.jobDescription ?? "",
       notes:          initialData?.notes    ?? "",
       appliedAt:      initialData?.appliedAt
         ? new Date(initialData.appliedAt).toISOString().split("T")[0]
@@ -118,12 +128,14 @@ export function JobForm({ initialData, onSubmit, onCancel, submitLabel = "Save" 
     try {
       const res = await api.post("/api/ai/parse-jd", { text: jdText });
       const data = res.data;
-      if (data.company)   form.setValue("company",  data.company,  { shouldValidate: true });
-      if (data.role)      form.setValue("role",      data.role,     { shouldValidate: true });
-      if (data.location)  form.setValue("location",  data.location, { shouldValidate: true });
-      if (data.salaryMin) form.setValue("salaryMin", data.salaryMin.toString(), { shouldValidate: true });
-      if (data.salaryMax) form.setValue("salaryMax", data.salaryMax.toString(), { shouldValidate: true });
-      if (data.notes)     form.setValue("notes",     data.notes,    { shouldValidate: true });
+      if (data.company)        form.setValue("company",  data.company,  { shouldValidate: true });
+      if (data.role)           form.setValue("role",      data.role,     { shouldValidate: true });
+      if (data.location)       form.setValue("location",  data.location, { shouldValidate: true });
+      if (data.workMode)       form.setValue("workMode",  data.workMode, { shouldValidate: true });
+      if (data.salaryMin)      form.setValue("salaryMin", data.salaryMin.toString(), { shouldValidate: true });
+      if (data.salaryMax)      form.setValue("salaryMax", data.salaryMax.toString(), { shouldValidate: true });
+      if (data.jobDescription) form.setValue("jobDescription", data.jobDescription, { shouldValidate: true });
+      if (data.notes)          form.setValue("notes",     data.notes,    { shouldValidate: true });
     } catch (err: any) {
       setParseError(err.response?.data?.error || "AI parsing failed.");
     } finally {
@@ -144,6 +156,8 @@ export function JobForm({ initialData, onSubmit, onCancel, submitLabel = "Save" 
         salaryCurrency: values.salaryCurrency,
         salaryPeriod:   values.salaryPeriod,
         location:       values.location?.trim() || null,
+        workMode:       values.workMode,
+        jobDescription: values.jobDescription?.trim() || null,
         notes:          values.notes?.trim()    || null,
         appliedAt:      values.appliedAt        ? new Date(values.appliedAt).toISOString() : null,
       });
@@ -233,7 +247,7 @@ export function JobForm({ initialData, onSubmit, onCancel, submitLabel = "Save" 
           />
         </div>
 
-        {/* ── Status + Location ── */}
+        {/* ── Status + Work Mode ── */}
         <div className="grid grid-cols-2 gap-4">
           <FormField
             control={form.control}
@@ -251,7 +265,7 @@ export function JobForm({ initialData, onSubmit, onCancel, submitLabel = "Save" 
                     {STATUS_OPTIONS.map((s) => (
                       <SelectItem key={s.value} value={s.value}>
                         <span className="flex items-center gap-2">
-                          <span className={`h-2 w-2 rounded-full shrink-0 ${s.dot}`} />
+                          {"dot" in s && <span className={`h-2 w-2 rounded-full shrink-0 ${s.dot}`} />}
                           {s.label}
                         </span>
                       </SelectItem>
@@ -264,33 +278,57 @@ export function JobForm({ initialData, onSubmit, onCancel, submitLabel = "Save" 
           />
           <FormField
             control={form.control}
-            name="location"
+            name="workMode"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Location</FormLabel>
-                <FormControl>
-                  <Input placeholder="e.g. Remote / Bangkok" {...field} disabled={isSubmitting} />
-                </FormControl>
+                <FormLabel>Work Mode</FormLabel>
+                <Select value={field.value} onValueChange={field.onChange} disabled={isSubmitting}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {WORK_MODE_OPTIONS.map((m) => (
+                      <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <FormMessage />
               </FormItem>
             )}
           />
         </div>
 
-        {/* ── Job URL ── */}
-        <FormField
-          control={form.control}
-          name="url"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Job URL</FormLabel>
-              <FormControl>
-                <Input type="url" placeholder="https://..." {...field} disabled={isSubmitting} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        {/* ── Location + Job URL ── */}
+        <div className="grid grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="location"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Location</FormLabel>
+                <FormControl>
+                  <Input placeholder="e.g. NYC / Bangkok" {...field} disabled={isSubmitting} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="url"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Job URL</FormLabel>
+                <FormControl>
+                  <Input type="url" placeholder="https://..." {...field} disabled={isSubmitting} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
 
         {/* ── Salary Min + Max ── */}
         <div className="grid grid-cols-2 gap-4">
@@ -385,16 +423,36 @@ export function JobForm({ initialData, onSubmit, onCancel, submitLabel = "Save" 
           )}
         />
 
-        {/* ── Notes ── */}
+        {/* ── Job Description ── */}
+        <FormField
+          control={form.control}
+          name="jobDescription"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Job Description (Full text)</FormLabel>
+              <FormControl>
+                <Textarea
+                  placeholder="Paste the full job description here..."
+                  className="min-h-[150px]"
+                  {...field}
+                  disabled={isSubmitting}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {/* ── Personal Notes ── */}
         <FormField
           control={form.control}
           name="notes"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Notes / Tech Stack</FormLabel>
+              <FormLabel>Personal Notes</FormLabel>
               <FormControl>
                 <Textarea
-                  placeholder="Key requirements, interview notes..."
+                  placeholder="Tech stack, interview notes, etc."
                   className="min-h-[100px]"
                   {...field}
                   disabled={isSubmitting}

@@ -11,10 +11,12 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useJobStore } from "@/store/useJobStore";
 import { JobDetailsSheet } from "./JobDetailsSheet";
+import { CompareJobsModal } from "./CompareJobsModal";
 import type { Status, JobApplication } from "@/lib/types";
-import { Trash2, Eye } from "lucide-react";
+import { Trash2, Eye, Sparkles, X } from "lucide-react";
 
 const STATUS_LABEL: Record<Status, string> = {
   WISHLIST:     "Wishlist",
@@ -57,10 +59,22 @@ export function JobTable() {
   const [selectedJob, setSelectedJob] = useState<JobApplication | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
 
+  // Comparison state
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [compareModalOpen, setCompareJobsModalOpen] = useState(false);
+
   function handleRowClick(job: JobApplication) {
     setSelectedJob(job);
     setSheetOpen(true);
   }
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
+    );
+  };
+
+  const selectedJobs = jobs.filter((j) => selectedIds.includes(j.id));
 
   return (
     <>
@@ -70,10 +84,17 @@ export function JobTable() {
         onOpenChange={setSheetOpen} 
       />
 
-      <div className="rounded-xl border border-border overflow-hidden">
+      <CompareJobsModal
+        jobs={selectedJobs}
+        open={compareModalOpen}
+        onOpenChange={setCompareJobsModalOpen}
+      />
+
+      <div className="rounded-xl border border-border overflow-hidden relative">
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/50">
+              <TableHead className="w-10"></TableHead>
               <TableHead className="font-semibold text-foreground">Company</TableHead>
               <TableHead className="font-semibold text-foreground">Role</TableHead>
               <TableHead className="font-semibold text-foreground">Status</TableHead>
@@ -86,7 +107,7 @@ export function JobTable() {
           <TableBody>
             {jobs.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-16 text-muted-foreground">
+                <TableCell colSpan={8} className="text-center py-16 text-muted-foreground">
                   No applications yet. Add your first one!
                 </TableCell>
               </TableRow>
@@ -94,9 +115,18 @@ export function JobTable() {
               jobs.map((job) => (
                 <TableRow 
                   key={job.id} 
-                  className="hover:bg-muted/40 transition-colors group cursor-pointer"
+                  className={`hover:bg-muted/40 transition-colors group cursor-pointer ${
+                    selectedIds.includes(job.id) ? "bg-primary/5" : ""
+                  }`}
                   onClick={() => handleRowClick(job)}
                 >
+                  <TableCell onClick={(e) => e.stopPropagation()}>
+                    <Checkbox
+                      checked={selectedIds.includes(job.id)}
+                      onCheckedChange={() => toggleSelect(job.id)}
+                      disabled={!selectedIds.includes(job.id) && selectedIds.length >= 3}
+                    />
+                  </TableCell>
                   <TableCell className="font-medium text-foreground">{job.company}</TableCell>
                   <TableCell className="text-muted-foreground">{job.role}</TableCell>
                   <TableCell>
@@ -143,6 +173,38 @@ export function JobTable() {
           </TableBody>
         </Table>
       </div>
+
+      {/* Floating Action Bar */}
+      {selectedIds.length > 0 && (
+        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-8 duration-300">
+          <div className="bg-foreground text-background px-6 py-3 rounded-full shadow-2xl flex items-center gap-6 border border-border/10">
+            <p className="text-sm font-semibold">
+              {selectedIds.length} job{selectedIds.length > 1 ? "s" : ""} selected
+              <span className="text-muted ml-1.5 opacity-50 font-normal">(Max 3)</span>
+            </p>
+            <div className="h-4 w-px bg-background/20" />
+            <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                className="bg-primary text-primary-foreground hover:bg-primary/90 h-8 gap-1.5 rounded-full px-4"
+                disabled={selectedIds.length < 2}
+                onClick={() => setCompareJobsModalOpen(true)}
+              >
+                <Sparkles className="h-3.5 w-3.5" />
+                Compare Jobs
+              </Button>
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-8 w-8 hover:bg-background/10 rounded-full"
+                onClick={() => setSelectedIds([])}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

@@ -26,6 +26,7 @@ import {
   ArrowLeft,
   User,
   Zap,
+  MapPin,
 } from "lucide-react";
 
 const MAX_TOKENS = 100_000;
@@ -39,6 +40,14 @@ export default function ProfilePage() {
   const [name, setName] = useState("");
   const [isSavingName, setIsSavingName] = useState(false);
   const [nameMessage, setNameMessage] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
+
+  // Home Location state
+  const [homeLocation, setHomeLocation] = useState("");
+  const [isSavingLocation, setIsSavingLocation] = useState(false);
+  const [locationMessage, setLocationMessage] = useState<{
     type: "success" | "error";
     text: string;
   } | null>(null);
@@ -61,6 +70,7 @@ export default function ProfilePage() {
       try {
         const res = await api.get("/api/users/profile");
         setName(res.data.name || "");
+        setHomeLocation(res.data.homeLocation || "");
         setResume(res.data.baseResume || "");
         setTokenUsage(res.data.tokenUsage ?? 0);
       } catch (err) {
@@ -78,7 +88,6 @@ export default function ProfilePage() {
     setNameMessage(null);
     try {
       const res = await api.put("/api/users/profile", { name: name.trim() });
-      // Sync the updated name into global auth state so navbar updates instantly
       if (token && res.data) {
         setAuth(token, { id: res.data.id, name: res.data.name, email: res.data.email });
       }
@@ -90,6 +99,22 @@ export default function ProfilePage() {
       });
     } finally {
       setIsSavingName(false);
+    }
+  }
+
+  async function handleSaveLocation() {
+    setIsSavingLocation(true);
+    setLocationMessage(null);
+    try {
+      await api.put("/api/users/profile", { homeLocation: homeLocation.trim() });
+      setLocationMessage({ type: "success", text: "Home location updated!" });
+    } catch (err: any) {
+      setLocationMessage({
+        type: "error",
+        text: err.response?.data?.error || "Failed to save location.",
+      });
+    } finally {
+      setIsSavingLocation(false);
     }
   }
 
@@ -132,7 +157,6 @@ export default function ProfilePage() {
         headers: { "Content-Type": "multipart/form-data" },
       });
       setResume(res.data.baseResume);
-      // Refresh quota after a Gemini call
       try {
         const profile = await api.get("/api/users/profile");
         setTokenUsage(profile.data.tokenUsage ?? 0);
@@ -163,7 +187,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-4xl mx-auto space-y-6 pb-12">
       {/* ── Back navigation ── */}
       <Button asChild variant="ghost" size="sm" className="gap-1.5 -ml-2 text-muted-foreground hover:text-foreground">
         <Link href="/dashboard">
@@ -210,127 +234,167 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* ── Token Usage card ── */}
-      {(() => {
-        const pct = Math.min(100, (tokenUsage / MAX_TOKENS) * 100);
-        const isWarn = tokenUsage >= 80_000 && tokenUsage < MAX_TOKENS;
-        const isCritical = tokenUsage >= MAX_TOKENS;
-        const accent = isCritical
-          ? "text-red-600"
-          : isWarn
-          ? "text-amber-600"
-          : "text-primary";
-        const indicator = isCritical
-          ? "[&>div]:bg-red-500"
-          : isWarn
-          ? "[&>div]:bg-amber-500"
-          : "[&>div]:bg-primary";
-        return (
+      <div className="grid gap-6 md:grid-cols-2">
+        <div className="space-y-6">
+          {/* ── Display Name card ── */}
           <Card className="border-border">
             <CardHeader>
               <div className="flex items-center gap-2">
-                <Zap className={`h-5 w-5 ${accent}`} />
-                <CardTitle>AI Token Usage</CardTitle>
+                <User className="h-5 w-5 text-primary" />
+                <CardTitle>Display Name</CardTitle>
               </div>
               <CardDescription>
-                You have a monthly cap of {MAX_TOKENS.toLocaleString()} tokens across all
-                AI features. Cached responses don't consume new tokens.
+                Your name used in AI-generated emails.
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex items-baseline justify-between">
-                <p className={`text-2xl font-bold tabular-nums ${accent}`}>
-                  {tokenUsage.toLocaleString()}
-                  <span className="text-sm font-medium text-muted-foreground ml-1.5">
-                    / {MAX_TOKENS.toLocaleString()}
-                  </span>
-                </p>
-                <p className={`text-sm font-semibold tabular-nums ${accent}`}>
-                  {pct.toFixed(1)}%
-                </p>
+            <CardContent className="space-y-4">
+              {nameMessage && (
+                <div
+                  className={`p-3 rounded-lg flex items-center gap-2 text-sm ${
+                    nameMessage.type === "success"
+                      ? "bg-green-50 text-green-700 border border-green-200"
+                      : "bg-red-50 text-red-700 border border-red-200"
+                  }`}
+                >
+                  {nameMessage.type === "success" ? (
+                    <CheckCircle2 className="h-4 w-4 shrink-0" />
+                  ) : (
+                    <AlertCircle className="h-4 w-4 shrink-0" />
+                  )}
+                  {nameMessage.text}
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <Label htmlFor="name">Full Name</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="name"
+                    placeholder="Your display name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    disabled={isSavingName}
+                  />
+                  <Button
+                    onClick={handleSaveName}
+                    disabled={isSavingName || !name.trim() || name.trim() === storeUser?.name}
+                    className="gap-1.5 shrink-0"
+                  >
+                    {isSavingName ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                  </Button>
+                </div>
               </div>
-              <Progress value={pct} className={indicator} />
-              {isCritical && (
-                <div className="flex items-start gap-2 p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
-                  <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
-                  You've reached your token limit. AI features are paused until your
-                  quota resets.
-                </div>
-              )}
-              {isWarn && (
-                <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-700 text-sm">
-                  <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
-                  Heads up — you've used over 80% of your token allowance.
-                </div>
-              )}
             </CardContent>
           </Card>
-        );
-      })()}
 
-      {/* ── Display Name card ── */}
-      <Card className="border-border">
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <User className="h-5 w-5 text-primary" />
-            <CardTitle>Display Name</CardTitle>
-          </div>
-          <CardDescription>
-            This is the name shown in the navigation bar and used in AI-generated emails.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {nameMessage && (
-            <div
-              className={`p-3 rounded-lg flex items-center gap-2 text-sm ${
-                nameMessage.type === "success"
-                  ? "bg-green-50 text-green-700 border border-green-200"
-                  : "bg-red-50 text-red-700 border border-red-200"
-              }`}
-            >
-              {nameMessage.type === "success" ? (
-                <CheckCircle2 className="h-4 w-4 shrink-0" />
-              ) : (
-                <AlertCircle className="h-4 w-4 shrink-0" />
+          {/* ── Home Location card ── */}
+          <Card className="border-border">
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <MapPin className="h-5 w-5 text-primary" />
+                <CardTitle>Home Location</CardTitle>
+              </div>
+              <CardDescription>
+                Used by AI to estimate commute times for job comparisons.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {locationMessage && (
+                <div
+                  className={`p-3 rounded-lg flex items-center gap-2 text-sm ${
+                    locationMessage.type === "success"
+                      ? "bg-green-50 text-green-700 border border-green-200"
+                      : "bg-red-50 text-red-700 border border-red-200"
+                  }`}
+                >
+                  {locationMessage.type === "success" ? (
+                    <CheckCircle2 className="h-4 w-4 shrink-0" />
+                  ) : (
+                    <AlertCircle className="h-4 w-4 shrink-0" />
+                  )}
+                  {locationMessage.text}
+                </div>
               )}
-              {nameMessage.text}
-            </div>
-          )}
 
-          <div className="flex items-end gap-3">
-            <div className="flex-1 space-y-2">
-              <Label htmlFor="name">Full Name</Label>
-              <Input
-                id="name"
-                placeholder="Your display name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                disabled={isSavingName}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") handleSaveName();
-                }}
-              />
-            </div>
-            <Button
-              onClick={handleSaveName}
-              disabled={isSavingName || !name.trim() || name.trim() === storeUser?.name}
-              className="gap-1.5 shrink-0"
-            >
-              {isSavingName ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <Save className="h-4 w-4" />
-                  Save Name
-                </>
-              )}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+              <div className="space-y-2">
+                <Label htmlFor="location">Your Address / Area</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="location"
+                    placeholder="e.g. Chatuchak, Bangkok"
+                    value={homeLocation}
+                    onChange={(e) => setHomeLocation(e.target.value)}
+                    disabled={isSavingLocation}
+                  />
+                  <Button
+                    onClick={handleSaveLocation}
+                    disabled={isSavingLocation}
+                    className="gap-1.5 shrink-0"
+                  >
+                    {isSavingLocation ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* ── Token Usage card ── */}
+        {(() => {
+          const pct = Math.min(100, (tokenUsage / MAX_TOKENS) * 100);
+          const isWarn = tokenUsage >= 80_000 && tokenUsage < MAX_TOKENS;
+          const isCritical = tokenUsage >= MAX_TOKENS;
+          const accent = isCritical
+            ? "text-red-600"
+            : isWarn
+            ? "text-amber-600"
+            : "text-primary";
+          const indicator = isCritical
+            ? "[&>div]:bg-red-500"
+            : isWarn
+            ? "[&>div]:bg-amber-500"
+            : "[&>div]:bg-primary";
+          return (
+            <Card className="border-border">
+              <CardHeader>
+                <div className="flex items-center gap-2">
+                  <Zap className={`h-5 w-5 ${accent}`} />
+                  <CardTitle>AI Token Usage</CardTitle>
+                </div>
+                <CardDescription>
+                  Monthly cap of {MAX_TOKENS.toLocaleString()} tokens.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex items-baseline justify-between">
+                  <p className={`text-2xl font-bold tabular-nums ${accent}`}>
+                    {tokenUsage.toLocaleString()}
+                    <span className="text-sm font-medium text-muted-foreground ml-1.5">
+                      / {MAX_TOKENS.toLocaleString()}
+                    </span>
+                  </p>
+                  <p className={`text-sm font-semibold tabular-nums ${accent}`}>
+                    {pct.toFixed(1)}%
+                  </p>
+                </div>
+                <Progress value={pct} className={indicator} />
+                {isCritical && (
+                  <div className="flex items-start gap-2 p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
+                    <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+                    Quota reached. AI features paused.
+                  </div>
+                )}
+                {isWarn && (
+                  <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-700 text-sm">
+                    <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+                    Over 80% used.
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          );
+        })()}
+      </div>
 
       {/* ── Master Resume card ── */}
       <Card className="border-border">
@@ -340,8 +404,7 @@ export default function ProfilePage() {
             <CardTitle>Master Resume (Markdown)</CardTitle>
           </div>
           <CardDescription>
-            Your AI-optimized master resume. Edit directly or upload a PDF to have
-            Gemini extract the content for you.
+            Your AI-optimized master resume. Gemini uses this to tailor applications.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

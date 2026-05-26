@@ -430,6 +430,14 @@ export function JobDetailsSheet({ job, open, onOpenChange }: Props) {
                   </div>
                   <div className="space-y-1">
                     <p className="text-xs font-medium text-muted-foreground uppercase flex items-center gap-1">
+                      <LayoutDashboard className="h-3 w-3" /> Work Mode
+                    </p>
+                    <Badge variant="secondary" className="text-xs font-semibold">
+                      {job.workMode}
+                    </Badge>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs font-medium text-muted-foreground uppercase flex items-center gap-1">
                       <DollarSign className="h-3 w-3" /> Salary
                     </p>
                     <p className="text-sm font-semibold">
@@ -457,31 +465,41 @@ export function JobDetailsSheet({ job, open, onOpenChange }: Props) {
                         : "Not applied yet"}
                     </p>
                   </div>
-                  <div className="space-y-1">
-                    <p className="text-xs font-medium text-muted-foreground uppercase flex items-center gap-1">
-                      <LinkIcon className="h-3 w-3" /> Job Link
-                    </p>
-                    {job.url ? (
-                      <a
-                        href={job.url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-sm font-semibold text-primary hover:underline flex items-center gap-1"
-                      >
-                        View Posting <LinkIcon className="h-3 w-3" />
-                      </a>
-                    ) : (
-                      <p className="text-sm font-semibold">No link</p>
-                    )}
+                </div>
+
+                <div className="space-y-1">
+                  <p className="text-xs font-medium text-muted-foreground uppercase flex items-center gap-1">
+                    <LinkIcon className="h-3 w-3" /> Job Link
+                  </p>
+                  {job.url ? (
+                    <a
+                      href={job.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-sm font-semibold text-primary hover:underline flex items-center gap-1"
+                    >
+                      View Posting <LinkIcon className="h-3 w-3" />
+                    </a>
+                  ) : (
+                    <p className="text-sm font-semibold">No link</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <p className="text-xs font-medium text-muted-foreground uppercase">
+                    Job Description
+                  </p>
+                  <div className="p-4 rounded-lg bg-muted/30 border border-border text-xs whitespace-pre-wrap leading-relaxed max-h-[200px] overflow-y-auto">
+                    {job.jobDescription || "No job description provided."}
                   </div>
                 </div>
 
                 <div className="space-y-2">
                   <p className="text-xs font-medium text-muted-foreground uppercase">
-                    Notes / Tech Stack
+                    Personal Notes / Tech Stack
                   </p>
                   <div className="p-4 rounded-lg bg-muted/50 border border-border text-sm whitespace-pre-wrap leading-relaxed">
-                    {job.notes || "No additional details provided."}
+                    {job.notes || "No personal notes provided."}
                   </div>
                 </div>
               </TabsContent>
