@@ -24,6 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import { api } from "@/lib/axios";
 import type { JobApplication } from "@/lib/types";
 import {
@@ -122,6 +123,11 @@ export function JobDetailsSheet({ job, open, onOpenChange }: Props) {
   const [emailError, setEmailError] = useState<string | null>(null);
   const [bodyCopied, setBodyCopied] = useState(false);
 
+  // Refinement feedback state
+  const [tailorFeedback, setTailorFeedback] = useState("");
+  const [interviewFeedback, setInterviewFeedback] = useState("");
+  const [emailFeedback, setEmailFeedback] = useState("");
+
   // Edit state
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
@@ -158,9 +164,12 @@ export function JobDetailsSheet({ job, open, onOpenChange }: Props) {
     setIsTailoring(true);
     setTailorError(null);
     try {
-      const res = await api.post("/api/ai/tailor", { jobId: job.id });
+      const payload: Record<string, string> = { jobId: job.id };
+      if (tailorFeedback.trim()) payload.feedback = tailorFeedback.trim();
+      const res = await api.post("/api/ai/tailor", payload);
       setTailoredData(res.data);
       setCoverLetterCache(job.id, res.data);
+      setTailorFeedback("");
     } catch (err: any) {
       setTailorError(
         err.response?.data?.error || "Failed to generate tailored content."
@@ -175,9 +184,12 @@ export function JobDetailsSheet({ job, open, onOpenChange }: Props) {
     setIsGeneratingQuestions(true);
     setInterviewError(null);
     try {
-      const res = await api.post("/api/ai/interview", { jobId: job.id });
+      const payload: Record<string, string> = { jobId: job.id };
+      if (interviewFeedback.trim()) payload.feedback = interviewFeedback.trim();
+      const res = await api.post("/api/ai/interview", payload);
       setInterviewQuestions(res.data.questions);
       setInterviewCache(job.id, { questions: res.data.questions });
+      setInterviewFeedback("");
     } catch (err: any) {
       setInterviewError(
         err.response?.data?.error ||
@@ -195,12 +207,12 @@ export function JobDetailsSheet({ job, open, onOpenChange }: Props) {
     setDraftedEmail(null);
     setBodyCopied(false);
     try {
-      const res = await api.post("/api/ai/email", {
-        jobId: job.id,
-        emailType: selectedEmailType,
-      });
+      const payload: Record<string, string> = { jobId: job.id, emailType: selectedEmailType };
+      if (emailFeedback.trim()) payload.feedback = emailFeedback.trim();
+      const res = await api.post("/api/ai/email", payload);
       setDraftedEmail(res.data);
       setEmailCache(job.id, selectedEmailType, res.data);
+      setEmailFeedback("");
     } catch (err: any) {
       setEmailError(
         err.response?.data?.error ||
@@ -492,6 +504,34 @@ export function JobDetailsSheet({ job, open, onOpenChange }: Props) {
                   </div>
                 )}
 
+                {tailoredData && (
+                  <div className="flex gap-2 pt-2">
+                    <Input
+                      placeholder="Want to change something? (e.g. 'Make it shorter')"
+                      value={tailorFeedback}
+                      onChange={(e) => setTailorFeedback(e.target.value)}
+                      disabled={isTailoring}
+                      className="text-sm"
+                    />
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={handleTailor}
+                      disabled={isTailoring}
+                      className="shrink-0"
+                    >
+                      {isTailoring ? (
+                        <>
+                          <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />
+                          Refining...
+                        </>
+                      ) : (
+                        "✨ Refine"
+                      )}
+                    </Button>
+                  </div>
+                )}
+
                 {!tailoredData && !isTailoring && (
                   <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground space-y-2">
                     <FileText className="h-10 w-10 opacity-20" />
@@ -599,6 +639,31 @@ export function JobDetailsSheet({ job, open, onOpenChange }: Props) {
                     <p className="text-[10px] text-muted-foreground text-center pt-1">
                       Click each question to reveal the STAR-method hint.
                     </p>
+                    <div className="flex gap-2 pt-1">
+                      <Input
+                        placeholder="Want to change something? (e.g. 'Focus on React')"
+                        value={interviewFeedback}
+                        onChange={(e) => setInterviewFeedback(e.target.value)}
+                        disabled={isGeneratingQuestions}
+                        className="text-sm"
+                      />
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={handleGenerateQuestions}
+                        disabled={isGeneratingQuestions}
+                        className="shrink-0"
+                      >
+                        {isGeneratingQuestions ? (
+                          <>
+                            <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />
+                            Refining...
+                          </>
+                        ) : (
+                          "✨ Refine"
+                        )}
+                      </Button>
+                    </div>
                   </div>
                 )}
 
@@ -741,6 +806,34 @@ export function JobDetailsSheet({ job, open, onOpenChange }: Props) {
                         );
                       })}
                     </Tabs>
+                  </div>
+                )}
+
+                {draftedEmail && (
+                  <div className="flex gap-2 pt-1">
+                    <Input
+                      placeholder="Want to change something? (e.g. 'Make it shorter')"
+                      value={emailFeedback}
+                      onChange={(e) => setEmailFeedback(e.target.value)}
+                      disabled={isDraftingEmail}
+                      className="text-sm"
+                    />
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={handleDraftEmail}
+                      disabled={isDraftingEmail}
+                      className="shrink-0"
+                    >
+                      {isDraftingEmail ? (
+                        <>
+                          <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />
+                          Refining...
+                        </>
+                      ) : (
+                        "✨ Refine"
+                      )}
+                    </Button>
                   </div>
                 )}
 
