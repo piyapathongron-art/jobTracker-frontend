@@ -34,15 +34,20 @@ const STATUS_VARIANT: Record<Status, string> = {
   GHOSTED:      "bg-orange-50 text-orange-700 border-orange-200",
 };
 
-function fmt(n: number) {
-  return n >= 1000 ? `$${(n / 1000).toFixed(0)}k` : `$${n}`;
+function fmt(n: number, currency: string) {
+  const sym = currency === "USD" ? "$" : "฿";
+  return n >= 1000 ? `${sym}${(n / 1000).toFixed(0)}k` : `${sym}${n}`;
 }
 
-function salary(min?: number | null, max?: number | null) {
+function salary(min: number | null, max: number | null, currency: string, period: string) {
   if (!min && !max) return "—";
-  if (min && max) return `${fmt(min)} – ${fmt(max)}`;
-  if (min) return `${fmt(min)}+`;
-  return `up to ${fmt(max!)}`;
+  const periodLabel = period === "HOURLY" ? "/hr" : period === "MONTHLY" ? "/mo" : "/yr";
+  const range = min && max
+    ? `${fmt(min, currency)} – ${fmt(max, currency)}`
+    : min
+    ? `${fmt(min, currency)}+`
+    : `up to ${fmt(max!, currency)}`;
+  return `${range} ${periodLabel}`;
 }
 
 export function JobTable() {
@@ -101,7 +106,7 @@ export function JobTable() {
                   </TableCell>
                   <TableCell className="text-muted-foreground">{job.location ?? "—"}</TableCell>
                   <TableCell className="text-muted-foreground">
-                    {salary(job.salaryMin, job.salaryMax)}
+                    {salary(job.salaryMin, job.salaryMax, job.salaryCurrency, job.salaryPeriod)}
                   </TableCell>
                   <TableCell className="text-muted-foreground">
                     {job.appliedAt

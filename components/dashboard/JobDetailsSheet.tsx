@@ -320,14 +320,18 @@ export function JobDetailsSheet({ job, open, onOpenChange }: Props) {
                       <DollarSign className="h-3 w-3" /> Salary
                     </p>
                     <p className="text-sm font-semibold">
-                      {job.salaryMin
-                        ? `$${(job.salaryMin / 1000).toFixed(0)}k`
-                        : ""}
-                      {job.salaryMin && job.salaryMax ? " – " : ""}
-                      {job.salaryMax
-                        ? `$${(job.salaryMax / 1000).toFixed(0)}k`
-                        : ""}
-                      {!job.salaryMin && !job.salaryMax ? "Not specified" : ""}
+                      {(() => {
+                        const sym = job.salaryCurrency === "USD" ? "$" : "฿";
+                        const fmt = (n: number) => n >= 1000 ? `${sym}${(n / 1000).toFixed(0)}k` : `${sym}${n}`;
+                        const periodLabel = job.salaryPeriod === "HOURLY" ? "/hr" : job.salaryPeriod === "MONTHLY" ? "/mo" : "/yr";
+                        if (!job.salaryMin && !job.salaryMax) return "Not specified";
+                        const range = job.salaryMin && job.salaryMax
+                          ? `${fmt(job.salaryMin)} – ${fmt(job.salaryMax)}`
+                          : job.salaryMin
+                          ? `${fmt(job.salaryMin)}+`
+                          : `up to ${fmt(job.salaryMax!)}`;
+                        return `${range} ${periodLabel}`;
+                      })()}
                     </p>
                   </div>
                   <div className="space-y-1">

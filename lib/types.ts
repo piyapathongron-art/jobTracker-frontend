@@ -15,6 +15,8 @@ export interface JobApplication {
   url: string | null;
   salaryMin: number | null;
   salaryMax: number | null;
+  salaryCurrency: string;
+  salaryPeriod: string;
   location: string | null;
   notes: string | null;
   appliedAt: string | null;
