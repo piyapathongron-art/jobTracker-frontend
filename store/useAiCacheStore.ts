@@ -28,11 +28,17 @@ export interface ResumeScoreCache {
   adviceTh: string[];
 }
 
+export interface OptimizedResumeCache {
+  optimizedResumeEn: string;
+  optimizedResumeTh: string;
+}
+
 export interface JobAiCache {
   coverLetter?: CoverLetterCache;
   interview?: InterviewCache;
   emails?: Record<string, EmailCache>;
   resumeScore?: ResumeScoreCache;
+  optimizedResume?: OptimizedResumeCache;
 }
 
 interface AiCacheState {
@@ -41,6 +47,7 @@ interface AiCacheState {
   setInterview: (jobId: string, data: InterviewCache) => void;
   setEmail: (jobId: string, emailType: string, data: EmailCache) => void;
   setResumeScore: (jobId: string, data: ResumeScoreCache) => void;
+  setOptimizedResume: (jobId: string, data: OptimizedResumeCache) => void;
   clearJob: (jobId: string) => void;
 }
 
@@ -80,6 +87,13 @@ export const useAiCacheStore = create<AiCacheState>()(
           cache: {
             ...state.cache,
             [jobId]: { ...state.cache[jobId], resumeScore: data },
+          },
+        })),
+      setOptimizedResume: (jobId, data) =>
+        set((state) => ({
+          cache: {
+            ...state.cache,
+            [jobId]: { ...state.cache[jobId], optimizedResume: data },
           },
         })),
       clearJob: (jobId) =>

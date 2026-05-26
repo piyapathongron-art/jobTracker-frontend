@@ -281,7 +281,7 @@ export default function DashboardClient() {
         <div className="grid grid-cols-3 gap-4 mb-8">
           {[
             { label: "Total Applications", value: total, icon: LayoutDashboard },
-            { label: "Active Pipelines", value: active, icon: BriefcaseBusiness },
+            { label: "Active Applications", value: active, icon: BriefcaseBusiness },
             { label: "Offers Received", value: offers, icon: Table2 },
           ].map(({ label, value, icon: Icon }) => (
             <Card key={label} className="border-border">

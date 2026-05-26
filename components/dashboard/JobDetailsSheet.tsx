@@ -99,6 +99,7 @@ export function JobDetailsSheet({ job, open, onOpenChange }: Props) {
   const setInterviewCache = useAiCacheStore((s) => s.setInterview);
   const setEmailCache = useAiCacheStore((s) => s.setEmail);
   const setResumeScoreCache = useAiCacheStore((s) => s.setResumeScore);
+  const setOptimizedResumeCache = useAiCacheStore((s) => s.setOptimizedResume);
   const [isEditing, setIsEditing] = useState(false);
 
   // Cover Letter state
@@ -146,6 +147,17 @@ export function JobDetailsSheet({ job, open, onOpenChange }: Props) {
   const [scoreFeedback, setScoreFeedback] = useState("");
   const [activeScoreTab, setActiveScoreTab] = useState<"en" | "th">("en");
 
+  // Resume Optimizer state
+  const [isOptimizing, setIsOptimizing] = useState(false);
+  const [optimizedData, setOptimizedData] = useState<{
+    optimizedResumeEn: string;
+    optimizedResumeTh: string;
+  } | null>(null);
+  const [optimizeError, setOptimizeError] = useState<string | null>(null);
+  const [optimizeFeedback, setOptimizeFeedback] = useState("");
+  const [activeOptimizeTab, setActiveOptimizeTab] = useState<"en" | "th">("en");
+  const [optimizeCopied, setOptimizeCopied] = useState<"en" | "th" | null>(null);
+
   // Edit state
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
@@ -156,6 +168,7 @@ export function JobDetailsSheet({ job, open, onOpenChange }: Props) {
     const cachedEmail = jobCache?.emails?.[selectedEmailType];
     setDraftedEmail(cachedEmail ?? null);
     setScoreData(jobCache?.resumeScore ?? null);
+    setOptimizedData(jobCache?.optimizedResume ?? null);
     setTailorError(null);
     setInterviewError(null);
     setEmailError(null);
@@ -176,6 +189,7 @@ export function JobDetailsSheet({ job, open, onOpenChange }: Props) {
       setInterviewError(null);
       setEmailError(null);
       setScoreError(null);
+      setOptimizeError(null);
       setBodyCopied(false);
     }
   }
@@ -262,6 +276,35 @@ export function JobDetailsSheet({ job, open, onOpenChange }: Props) {
     } finally {
       setIsScoring(false);
     }
+  }
+
+  async function handleOptimizeResume() {
+    if (!job || !scoreData) return;
+    setIsOptimizing(true);
+    setOptimizeError(null);
+    try {
+      const payload: Record<string, any> = { jobId: job.id, scoreData };
+      if (optimizeFeedback.trim()) payload.feedback = optimizeFeedback.trim();
+      const res = await api.post("/api/ai/optimize-resume", payload);
+      setOptimizedData(res.data);
+      setOptimizedResumeCache(job.id, res.data);
+      setOptimizeFeedback("");
+      setOptimizeCopied(null);
+    } catch (err: any) {
+      setOptimizeError(
+        err.response?.data?.error || "Failed to optimize resume. Please try again."
+      );
+    } finally {
+      setIsOptimizing(false);
+    }
+  }
+
+  function handleCopyOptimized(which: "en" | "th") {
+    if (!optimizedData) return;
+    const text = which === "th" ? optimizedData.optimizedResumeTh : optimizedData.optimizedResumeEn;
+    navigator.clipboard.writeText(text);
+    setOptimizeCopied(which);
+    setTimeout(() => setOptimizeCopied(null), 2000);
   }
 
   function handleCopyBody() {
@@ -1054,7 +1097,122 @@ export function JobDetailsSheet({ job, open, onOpenChange }: Props) {
                       })}
                     </Tabs>
 
-                    {/* Refinement input */}
+                    {/* ── Auto-Improve Divider ── */}
+                    <div className="border-t border-border pt-5">
+                      <div className="flex items-center justify-between mb-3">
+                        <div>
+                          <p className="text-sm font-semibold flex items-center gap-2">
+                            <Sparkles className="h-4 w-4 text-primary" />
+                            Auto-Improve My Resume
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            Rewrites your master resume specifically for this role, in EN &amp; TH.
+                          </p>
+                        </div>
+                        <Button
+                          onClick={handleOptimizeResume}
+                          disabled={isOptimizing}
+                          size="sm"
+                          className="gap-1.5 shrink-0"
+                        >
+                          {isOptimizing ? (
+                            <>
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                              Rewriting...
+                            </>
+                          ) : (
+                            <>
+                              <Sparkles className="h-4 w-4" />
+                              {optimizedData ? "Re-optimize" : "Auto-Improve"}
+                            </>
+                          )}
+                        </Button>
+                      </div>
+
+                      {optimizeError && (
+                        <div className="p-4 rounded-lg bg-red-50 text-red-700 border border-red-200 text-sm flex items-start gap-2 mb-3">
+                          <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+                          {optimizeError}
+                        </div>
+                      )}
+
+                      {optimizedData && (
+                        <div className="animate-in fade-in slide-in-from-bottom-2 duration-300 space-y-3">
+                          <Tabs
+                            value={activeOptimizeTab}
+                            onValueChange={(v) => {
+                              setActiveOptimizeTab(v as "en" | "th");
+                              setOptimizeCopied(null);
+                            }}
+                            defaultValue="en"
+                          >
+                            <div className="flex items-center justify-between gap-2">
+                              <TabsList className="grid w-full max-w-[260px] grid-cols-2">
+                                <TabsTrigger value="en" className="text-xs">{t.ai.english}</TabsTrigger>
+                                <TabsTrigger value="th" className="text-xs">{t.ai.thai}</TabsTrigger>
+                              </TabsList>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 gap-1.5 text-xs"
+                                onClick={() => handleCopyOptimized(activeOptimizeTab)}
+                              >
+                                {optimizeCopied === activeOptimizeTab ? (
+                                  <>
+                                    <Check className="h-3.5 w-3.5 text-green-600" />
+                                    <span className="text-green-600">{t.buttons.copied}</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Copy className="h-3.5 w-3.5" />
+                                    {t.buttons.copy}
+                                  </>
+                                )}
+                              </Button>
+                            </div>
+                            <TabsContent value="en" className="mt-3">
+                              <div className="p-5 rounded-lg border border-border bg-background text-sm leading-loose whitespace-pre-wrap shadow-sm font-mono max-h-[500px] overflow-y-auto">
+                                {optimizedData.optimizedResumeEn}
+                              </div>
+                            </TabsContent>
+                            <TabsContent value="th" className="mt-3">
+                              <div className="p-5 rounded-lg border border-border bg-background text-sm leading-loose whitespace-pre-wrap shadow-sm font-mono max-h-[500px] overflow-y-auto">
+                                {optimizedData.optimizedResumeTh}
+                              </div>
+                            </TabsContent>
+                          </Tabs>
+
+                          {/* Optimizer refinement input */}
+                          <div className="flex gap-2 pt-1">
+                            <Input
+                              placeholder="Want changes? (e.g. 'Add more leadership bullet points')"
+                              value={optimizeFeedback}
+                              onChange={(e) => setOptimizeFeedback(e.target.value)}
+                              disabled={isOptimizing}
+                              className="text-sm"
+                            />
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              onClick={handleOptimizeResume}
+                              disabled={isOptimizing}
+                              className="shrink-0"
+                            >
+                              {isOptimizing ? (
+                                <>
+                                  <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />
+                                  Refining...
+                                </>
+                              ) : (
+                                "✨ Refine"
+                              )}
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Score Refinement input */}
                     <div className="flex gap-2 pt-1">
                       <Input
                         placeholder="Want different feedback? (e.g. 'Focus on DevOps gaps')"

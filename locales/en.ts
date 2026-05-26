@@ -7,7 +7,7 @@ export const en = {
   dashboard: {
     title: "My Applications",
     statsTotal: "Total Applications",
-    statsActive: "Active Pipelines",
+    statsActive: "Active Applications",
     statsOffers: "Offers Received",
     tabKanban: "Kanban",
     tabTable: "Table",
