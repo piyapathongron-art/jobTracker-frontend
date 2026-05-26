@@ -10,7 +10,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/axios";
-import type { JobApplication } from "@/lib/types";
+import type { JobApplication, Status } from "@/lib/types";
 import {
   Loader2,
   Sparkles,
@@ -22,6 +22,8 @@ import {
   XCircle,
   AlertCircle,
   Navigation,
+  BrainCircuit,
+  TrendingUp,
 } from "lucide-react";
 
 interface Props {
@@ -45,22 +47,30 @@ interface ComparisonData {
   recommendationTh: string;
 }
 
+const STATUS_VARIANT: Record<Status, string> = {
+  WISHLIST:     "bg-slate-100 text-slate-700 border-slate-200",
+  APPLIED:      "bg-blue-50 text-blue-700 border-blue-200",
+  INTERVIEWING: "bg-violet-50 text-violet-700 border-violet-200",
+  OFFERED:      "bg-emerald-50 text-emerald-700 border-emerald-200",
+  REJECTED:     "bg-red-50 text-red-700 border-red-200",
+  GHOSTED:      "bg-orange-50 text-orange-700 border-orange-200",
+};
+
 export function CompareJobsModal({ jobs, open, onOpenChange }: Props) {
   const [isLoading, setIsLoading] = useState(false);
   const [data, setData] = useState<ComparisonData | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  // Reset results when modal closes or jobs change
   useEffect(() => {
-    if (open && jobs.length >= 2) {
-      handleCompare();
-    } else if (!open) {
+    if (!open) {
       setData(null);
       setError(null);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
+  }, [open, jobs]);
 
   async function handleCompare() {
+    if (jobs.length < 2) return;
     setIsLoading(true);
     setError(null);
     try {
@@ -84,71 +94,113 @@ export function CompareJobsModal({ jobs, open, onOpenChange }: Props) {
       : job.salaryMin ? `${f(job.salaryMin)}+` : `<${f(job.salaryMax!)}`;
   }
 
+  // Calculate highest salary for highlighting
+  const maxSalaries = jobs.map(j => j.salaryMax || j.salaryMin || 0);
+  const highestSalary = Math.max(...maxSalaries, 0);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-2xl font-bold">
             <Sparkles className="h-6 w-6 text-primary" />
-            AI Job Comparison
+            Job Comparison
           </DialogTitle>
         </DialogHeader>
 
         <div className="mt-6 space-y-8">
           {/* Comparison Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className={`grid grid-cols-1 md:grid-cols-${jobs.length} gap-4`}>
             {jobs.map((job) => {
               const aiData = data?.comparisons.find((c) => c.jobId === job.id);
+              const isHighest = highestSalary > 0 && (job.salaryMax === highestSalary || (!job.salaryMax && job.salaryMin === highestSalary));
+              
               return (
-                <div key={job.id} className="p-4 rounded-xl border border-border bg-muted/20 space-y-4 flex flex-col">
+                <div key={job.id} className="p-5 rounded-xl border border-border bg-card shadow-sm space-y-5 flex flex-col">
+                  {/* Header: Role & Company */}
                   <div>
-                    <h3 className="font-bold text-lg leading-tight">{job.role}</h3>
-                    <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
-                      <Building2 className="h-3.5 w-3.5" /> {job.company}
+                    <h3 className="font-bold text-lg leading-tight min-h-[2.5rem]">{job.role}</h3>
+                    <p className="text-sm text-muted-foreground flex items-center gap-1.5 mt-1.5 font-medium">
+                      <Building2 className="h-4 w-4" /> {job.company}
                     </p>
                   </div>
 
-                  <div className="space-y-2 text-sm flex-1">
-                    <div className="flex items-center gap-2">
-                      <DollarSign className="h-4 w-4 text-muted-foreground" />
-                      <span className="font-semibold">{fmtSalary(job)}</span>
+                  {/* Core Data List */}
+                  <div className="space-y-3.5 text-sm flex-1">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2.5 text-muted-foreground">
+                        <Briefcase className="h-4 w-4" />
+                        <span>Status</span>
+                      </div>
+                      <Badge variant="outline" className={`text-[10px] font-bold h-5 ${STATUS_VARIANT[job.status]}`}>
+                        {job.status}
+                      </Badge>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <MapPin className="h-4 w-4 text-muted-foreground" />
-                      <span>{job.location || "N/A"}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Briefcase className="h-4 w-4 text-muted-foreground" />
-                      <Badge variant="outline" className="text-[10px] font-bold py-0 h-5">
+
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2.5 text-muted-foreground">
+                        <Navigation className="h-4 w-4" />
+                        <span>Work Mode</span>
+                      </div>
+                      <Badge variant="secondary" className="text-[10px] font-bold h-5">
                         {job.workMode}
                       </Badge>
                     </div>
+
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2.5 text-muted-foreground">
+                        <MapPin className="h-4 w-4" />
+                        <span>Location</span>
+                      </div>
+                      <span className="font-medium">{job.location || "N/A"}</span>
+                    </div>
+
+                    <div className="pt-2 mt-2 border-t border-dashed border-border flex items-center justify-between">
+                      <div className="flex items-center gap-2.5 text-muted-foreground">
+                        <DollarSign className="h-4 w-4" />
+                        <span>Salary</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className={`font-bold ${isHighest ? "text-green-600" : ""}`}>
+                          {fmtSalary(job)}
+                        </span>
+                        {isHighest && (
+                          <div className="flex items-center bg-green-50 text-green-700 px-1.5 py-0.5 rounded text-[10px] font-black border border-green-200">
+                            <TrendingUp className="h-3 w-3 mr-0.5" />
+                            BEST
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {job.notes && (
+                      <div className="pt-3 mt-3 border-t border-solid border-border/50">
+                        <p className="text-[10px] font-black text-muted-foreground uppercase tracking-wider mb-1.5">Personal Notes</p>
+                        <p className="text-xs leading-relaxed text-foreground/90 whitespace-pre-wrap p-2 rounded-md bg-muted/30 border border-muted">
+                          {job.notes}
+                        </p>
+                      </div>
+                    )}
                   </div>
 
-                  {isLoading && (
-                    <div className="py-8 flex flex-col items-center justify-center gap-2 text-muted-foreground italic text-xs border-t border-dashed border-border mt-4">
-                      <Loader2 className="h-4 w-4 animate-spin text-primary" />
-                      Evaluating with AI...
-                    </div>
-                  )}
-
+                  {/* AI Results Section within each card */}
                   {aiData && (
-                    <div className="pt-4 border-t border-border space-y-4 animate-in fade-in duration-500">
-                      <div className="p-2 rounded bg-primary/5 border border-primary/10">
-                        <p className="text-[10px] font-bold uppercase text-primary mb-1 flex items-center gap-1">
-                          <Navigation className="h-3 w-3" /> Commute
+                    <div className="pt-5 border-t border-border space-y-4 animate-in fade-in slide-in-from-top-2 duration-500">
+                      <div className="p-3 rounded-lg bg-primary/5 border border-primary/10">
+                        <p className="text-[10px] font-black uppercase text-primary mb-1.5 flex items-center gap-1.5">
+                          <Navigation className="h-3 w-3" /> Commute Estimation
                         </p>
-                        <p className="text-xs font-medium leading-relaxed">
+                        <p className="text-xs font-semibold leading-relaxed">
                           {aiData.commuteEstimationEn}
                         </p>
                       </div>
 
                       <div className="space-y-2">
-                        <p className="text-[10px] font-bold uppercase text-green-600">Pros</p>
-                        <ul className="space-y-1">
+                        <p className="text-[10px] font-black uppercase text-green-600 tracking-wider">Pros</p>
+                        <ul className="space-y-1.5">
                           {aiData.prosEn.map((p, i) => (
-                            <li key={i} className="text-[11px] flex items-start gap-1.5 leading-tight">
-                              <CheckCircle2 className="h-3 w-3 shrink-0 text-green-500 mt-0.5" />
+                            <li key={i} className="text-[11px] font-medium flex items-start gap-2 leading-tight">
+                              <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-green-500 mt-0" />
                               {p}
                             </li>
                           ))}
@@ -156,20 +208,20 @@ export function CompareJobsModal({ jobs, open, onOpenChange }: Props) {
                       </div>
 
                       <div className="space-y-2">
-                        <p className="text-[10px] font-bold uppercase text-red-600">Cons</p>
-                        <ul className="space-y-1">
+                        <p className="text-[10px] font-black uppercase text-red-600 tracking-wider">Cons</p>
+                        <ul className="space-y-1.5">
                           {aiData.consEn.map((c, i) => (
-                            <li key={i} className="text-[11px] flex items-start gap-1.5 leading-tight">
-                              <XCircle className="h-3 w-3 shrink-0 text-red-400 mt-0.5" />
+                            <li key={i} className="text-[11px] font-medium flex items-start gap-2 leading-tight">
+                              <XCircle className="h-3.5 w-3.5 shrink-0 text-red-400 mt-0" />
                               {c}
                             </li>
                           ))}
                         </ul>
                       </div>
 
-                      <div className="flex items-center justify-between pt-2">
-                        <span className="text-xs font-bold text-muted-foreground uppercase">Score</span>
-                        <span className={`text-lg font-black ${
+                      <div className="flex items-center justify-between pt-3 border-t border-muted">
+                        <span className="text-xs font-black text-muted-foreground uppercase tracking-widest">Job Score</span>
+                        <span className={`text-xl font-black ${
                           aiData.overallScore >= 80 ? "text-green-600" : aiData.overallScore >= 50 ? "text-amber-500" : "text-red-500"
                         }`}>
                           {aiData.overallScore}%
@@ -182,40 +234,81 @@ export function CompareJobsModal({ jobs, open, onOpenChange }: Props) {
             })}
           </div>
 
-          {error && (
-            <div className="p-4 rounded-lg bg-red-50 text-red-700 border border-red-200 text-sm flex items-start gap-2">
-              <AlertCircle className="h-5 w-5 shrink-0" />
-              {error}
+          {/* AI Trigger Button */}
+          {!data && !isLoading && (
+            <div className="flex flex-col items-center py-4 space-y-4">
+              <div className="w-full h-px bg-gradient-to-r from-transparent via-border to-transparent" />
+              <Button 
+                onClick={handleCompare} 
+                className="rounded-full px-8 h-12 gap-2.5 font-bold shadow-lg hover:shadow-xl transition-all hover:scale-105 bg-primary"
+              >
+                <Sparkles className="h-5 w-5" />
+                Ask AI to Analyze Pros/Cons & Commute
+              </Button>
+              <p className="text-xs text-muted-foreground italic">
+                Gemini will use its geographic knowledge to estimate your commute and evaluate role quality.
+              </p>
             </div>
           )}
 
+          {isLoading && (
+            <div className="flex flex-col items-center justify-center py-12 space-y-4 text-primary animate-pulse">
+              <Loader2 className="h-10 w-10 animate-spin" />
+              <p className="font-bold text-sm">Gemini is analyzing your future options...</p>
+            </div>
+          )}
+
+          {error && (
+            <div className="p-4 rounded-lg bg-red-50 text-red-700 border border-red-200 text-sm flex items-start gap-3">
+              <AlertCircle className="h-5 w-5 shrink-0" />
+              <div className="space-y-1">
+                <p className="font-bold">Analysis Failed</p>
+                <p className="opacity-90">{error}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Recommendation Section */}
           {data && (
-            <div className="p-6 rounded-xl bg-primary/5 border border-primary/20 space-y-4 animate-in zoom-in-95 duration-500">
-              <h3 className="font-bold flex items-center gap-2">
-                <BrainCircuit className="h-5 w-5 text-primary" />
-                Final Recommendation
-              </h3>
-              <div className="space-y-4">
-                <div className="p-4 rounded-lg bg-background border border-border text-sm leading-relaxed whitespace-pre-wrap shadow-sm">
-                  <p className="font-bold text-xs uppercase text-primary mb-2">English</p>
-                  {data.recommendationEn}
+            <div className="p-8 rounded-2xl bg-primary/5 border border-primary/20 space-y-6 animate-in zoom-in-95 duration-500 shadow-inner">
+              <div className="flex items-center gap-3">
+                <div className="bg-primary/10 p-2 rounded-lg">
+                  <BrainCircuit className="h-6 w-6 text-primary" />
                 </div>
-                <div className="p-4 rounded-lg bg-background border border-border text-sm leading-relaxed whitespace-pre-wrap shadow-sm">
-                  <p className="font-bold text-xs uppercase text-primary mb-2">ภาษาไทย</p>
-                  {data.recommendationTh}
+                <h3 className="text-xl font-black tracking-tight">Final Recommendation</h3>
+              </div>
+              
+              <div className="grid gap-6 md:grid-cols-2">
+                <div className="p-5 rounded-xl bg-background border border-border shadow-sm space-y-3">
+                  <p className="font-black text-xs uppercase text-primary tracking-widest flex items-center gap-2">
+                    <span className="h-1 w-4 bg-primary rounded-full" />
+                    English Analysis
+                  </p>
+                  <p className="text-sm leading-relaxed whitespace-pre-wrap font-medium text-foreground/90">
+                    {data.recommendationEn}
+                  </p>
+                </div>
+                <div className="p-5 rounded-xl bg-background border border-border shadow-sm space-y-3">
+                  <p className="font-black text-xs uppercase text-primary tracking-widest flex items-center gap-2">
+                    <span className="h-1 w-4 bg-primary rounded-full" />
+                    บทวิเคราะห์ภาษาไทย
+                  </p>
+                  <p className="text-sm leading-relaxed whitespace-pre-wrap font-medium text-foreground/90">
+                    {data.recommendationTh}
+                  </p>
                 </div>
               </div>
             </div>
           )}
         </div>
 
-        <div className="flex justify-end gap-3 mt-4">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+        <div className="flex justify-end gap-3 mt-8">
+          <Button variant="outline" onClick={() => onOpenChange(false)} className="rounded-full px-6">
             Close
           </Button>
-          {!data && !isLoading && (
-            <Button onClick={handleCompare} className="gap-1.5">
-              <Sparkles className="h-4 w-4" /> Try Again
+          {data && (
+            <Button onClick={handleCompare} variant="secondary" className="rounded-full px-6 gap-2">
+              <Sparkles className="h-4 w-4" /> Re-analyze
             </Button>
           )}
         </div>
@@ -223,6 +316,3 @@ export function CompareJobsModal({ jobs, open, onOpenChange }: Props) {
     </Dialog>
   );
 }
-
-// Small helper for icons used above but not imported correctly in thought
-import { BrainCircuit } from "lucide-react";
