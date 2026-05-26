@@ -37,6 +37,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({});
   const [loading, setLoading] = useState(false);
 
   async function handleGoogleSuccess(credentialResponse: CredentialResponse) {
@@ -60,11 +61,17 @@ export default function LoginPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setError("");
-
+    setFieldErrors({});
     const parsed = loginSchema.safeParse({ email, password });
     if (!parsed.success) {
-      setError(parsed.error.issues[0]?.message ?? "Invalid input.");
+      const errors: Record<string, string> = {};
+      parsed.error.issues.forEach((issue) => {
+        const path = issue.path[0] as string;
+        if (!errors[path]) {
+          errors[path] = issue.message;
+        }
+      });
+      setFieldErrors(errors);
       return;
     }
 
@@ -125,7 +132,7 @@ export default function LoginPage() {
               </div>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-3">
+            <form onSubmit={handleSubmit} className="space-y-3" noValidate>
               <div className="space-y-1.5">
                 <Label htmlFor="email">Email</Label>
                 <Input
@@ -137,6 +144,9 @@ export default function LoginPage() {
                   required
                   autoComplete="email"
                 />
+                {fieldErrors.email && (
+                  <p className="text-xs font-semibold text-red-600 mt-1">{fieldErrors.email}</p>
+                )}
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="password">Password</Label>
@@ -149,6 +159,9 @@ export default function LoginPage() {
                   required
                   autoComplete="current-password"
                 />
+                {fieldErrors.password && (
+                  <p className="text-xs font-semibold text-red-600 mt-1">{fieldErrors.password}</p>
+                )}
               </div>
               <Button type="submit" className="w-full cursor-pointer" disabled={loading}>
                 {loading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
