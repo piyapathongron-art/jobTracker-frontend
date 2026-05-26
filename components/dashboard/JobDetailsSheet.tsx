@@ -45,6 +45,8 @@ import {
   Mail,
   Copy,
   Check,
+  Target,
+  XCircle,
 } from "lucide-react";
 import { JobForm } from "./JobForm";
 import { useJobStore } from "@/store/useJobStore";
@@ -96,6 +98,7 @@ export function JobDetailsSheet({ job, open, onOpenChange }: Props) {
   const setCoverLetterCache = useAiCacheStore((s) => s.setCoverLetter);
   const setInterviewCache = useAiCacheStore((s) => s.setInterview);
   const setEmailCache = useAiCacheStore((s) => s.setEmail);
+  const setResumeScoreCache = useAiCacheStore((s) => s.setResumeScore);
   const [isEditing, setIsEditing] = useState(false);
 
   // Cover Letter state
@@ -128,6 +131,21 @@ export function JobDetailsSheet({ job, open, onOpenChange }: Props) {
   const [interviewFeedback, setInterviewFeedback] = useState("");
   const [emailFeedback, setEmailFeedback] = useState("");
 
+  // Resume Match / Score state
+  const [isScoring, setIsScoring] = useState(false);
+  const [scoreData, setScoreData] = useState<{
+    score: number;
+    strengthsEn: string[];
+    weaknessesEn: string[];
+    adviceEn: string[];
+    strengthsTh: string[];
+    weaknessesTh: string[];
+    adviceTh: string[];
+  } | null>(null);
+  const [scoreError, setScoreError] = useState<string | null>(null);
+  const [scoreFeedback, setScoreFeedback] = useState("");
+  const [activeScoreTab, setActiveScoreTab] = useState<"en" | "th">("en");
+
   // Edit state
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
@@ -137,9 +155,11 @@ export function JobDetailsSheet({ job, open, onOpenChange }: Props) {
     setInterviewQuestions(jobCache?.interview?.questions ?? null);
     const cachedEmail = jobCache?.emails?.[selectedEmailType];
     setDraftedEmail(cachedEmail ?? null);
+    setScoreData(jobCache?.resumeScore ?? null);
     setTailorError(null);
     setInterviewError(null);
     setEmailError(null);
+    setScoreError(null);
     setBodyCopied(false);
     setCoverCopied(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -155,6 +175,7 @@ export function JobDetailsSheet({ job, open, onOpenChange }: Props) {
       setTailorError(null);
       setInterviewError(null);
       setEmailError(null);
+      setScoreError(null);
       setBodyCopied(false);
     }
   }
@@ -220,6 +241,26 @@ export function JobDetailsSheet({ job, open, onOpenChange }: Props) {
       );
     } finally {
       setIsDraftingEmail(false);
+    }
+  }
+
+  async function handleScoreResume() {
+    if (!job) return;
+    setIsScoring(true);
+    setScoreError(null);
+    try {
+      const payload: Record<string, string> = { jobId: job.id };
+      if (scoreFeedback.trim()) payload.feedback = scoreFeedback.trim();
+      const res = await api.post("/api/ai/score-resume", payload);
+      setScoreData(res.data);
+      setResumeScoreCache(job.id, res.data);
+      setScoreFeedback("");
+    } catch (err: any) {
+      setScoreError(
+        err.response?.data?.error || "Failed to analyze resume match. Please try again."
+      );
+    } finally {
+      setIsScoring(false);
     }
   }
 
@@ -310,7 +351,7 @@ export function JobDetailsSheet({ job, open, onOpenChange }: Props) {
             </div>
           ) : (
             <Tabs defaultValue="overview">
-              <TabsList className="grid w-full grid-cols-4">
+              <TabsList className="grid w-full grid-cols-5">
                 <TabsTrigger value="overview" className="gap-1 text-xs px-1">
                   <LayoutDashboard className="h-3.5 w-3.5 shrink-0" />
                   <span className="hidden sm:inline">Overview</span>
@@ -326,6 +367,10 @@ export function JobDetailsSheet({ job, open, onOpenChange }: Props) {
                 <TabsTrigger value="email-drafter" className="gap-1 text-xs px-1">
                   <Mail className="h-3.5 w-3.5 shrink-0" />
                   <span className="hidden sm:inline">Email</span>
+                </TabsTrigger>
+                <TabsTrigger value="resume-match" className="gap-1 text-xs px-1">
+                  <Target className="h-3.5 w-3.5 shrink-0" />
+                  <span className="hidden sm:inline">Match</span>
                 </TabsTrigger>
               </TabsList>
 
@@ -847,6 +892,206 @@ export function JobDetailsSheet({ job, open, onOpenChange }: Props) {
                     </p>
                     <p className="text-xs opacity-70">
                       Uses your name, the role, and company to personalize the draft.
+                    </p>
+                  </div>
+                )}
+              </TabsContent>
+
+              {/* ── Resume Match Tab ── */}
+              <TabsContent value="resume-match" className="mt-6 space-y-5">
+                {/* Header row */}
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-semibold flex items-center gap-2 text-sm">
+                      <Target className="h-4 w-4 text-primary" />
+                      Resume Match &amp; Score
+                    </h3>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Analyzes your master resume against this role's requirements.
+                    </p>
+                  </div>
+                  <Button
+                    onClick={handleScoreResume}
+                    disabled={isScoring}
+                    size="sm"
+                    className="gap-1.5 shrink-0"
+                  >
+                    {isScoring ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Analyzing...
+                      </>
+                    ) : (
+                      <>
+                        <Target className="h-4 w-4" />
+                        {scoreData ? "Re-analyze" : "Analyze Match"}
+                      </>
+                    )}
+                  </Button>
+                </div>
+
+                {scoreError && (
+                  <div className="p-4 rounded-lg bg-red-50 text-red-700 border border-red-200 text-sm flex items-start gap-2">
+                    <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+                    {scoreError}
+                  </div>
+                )}
+
+                {scoreData && (
+                  <div className="animate-in fade-in slide-in-from-bottom-2 duration-300 space-y-5">
+                    {/* Score dial */}
+                    {(() => {
+                      const s = scoreData.score;
+                      const color = s >= 80 ? "#22c55e" : s >= 50 ? "#eab308" : "#ef4444";
+                      const textColor = s >= 80 ? "text-green-600" : s >= 50 ? "text-yellow-600" : "text-red-500";
+                      const label = s >= 80 ? "Strong Match" : s >= 50 ? "Partial Match" : "Weak Match";
+                      // SVG circle dial: circumference = 2π×40 ≈ 251.2
+                      const circ = 251.2;
+                      const offset = circ - (s / 100) * circ;
+                      return (
+                        <div className="flex flex-col items-center gap-2 py-4">
+                          <svg width="120" height="120" viewBox="0 0 100 100" className="-rotate-90">
+                            <circle cx="50" cy="50" r="40" fill="none" stroke="currentColor" strokeWidth="10" className="text-muted/30" />
+                            <circle
+                              cx="50" cy="50" r="40" fill="none"
+                              stroke={color} strokeWidth="10"
+                              strokeDasharray={circ}
+                              strokeDashoffset={offset}
+                              strokeLinecap="round"
+                              style={{ transition: "stroke-dashoffset 0.8s ease" }}
+                            />
+                          </svg>
+                          <div className="-mt-[88px] flex flex-col items-center z-10">
+                            <span className={`text-4xl font-bold ${textColor}`}>{s}</span>
+                            <span className="text-xs text-muted-foreground font-medium">/ 100</span>
+                          </div>
+                          <div className="mt-10" />
+                          <span className={`text-sm font-semibold ${textColor}`}>{label}</span>
+                        </div>
+                      );
+                    })()}
+
+                    {/* EN / TH toggle */}
+                    <Tabs
+                      value={activeScoreTab}
+                      onValueChange={(v) => setActiveScoreTab(v as "en" | "th")}
+                      defaultValue="en"
+                    >
+                      <TabsList className="grid w-full max-w-[260px] grid-cols-2">
+                        <TabsTrigger value="en" className="text-xs">{t.ai.english}</TabsTrigger>
+                        <TabsTrigger value="th" className="text-xs">{t.ai.thai}</TabsTrigger>
+                      </TabsList>
+
+                      {(["en", "th"] as const).map((tab) => {
+                        const strengths = tab === "th" ? scoreData.strengthsTh : scoreData.strengthsEn;
+                        const weaknesses = tab === "th" ? scoreData.weaknessesTh : scoreData.weaknessesEn;
+                        const advice = tab === "th" ? scoreData.adviceTh : scoreData.adviceEn;
+                        return (
+                          <TabsContent key={tab} value={tab} className="mt-3">
+                            <Accordion type="multiple" className="space-y-2">
+                              {/* Strengths */}
+                              <AccordionItem value="strengths" className="border border-green-200 rounded-lg px-4 data-[state=open]:bg-green-50/50 transition-colors">
+                                <AccordionTrigger className="text-sm font-semibold text-green-700 hover:no-underline py-3 gap-2">
+                                  <span className="flex items-center gap-2">
+                                    <CheckCircle2 className="h-4 w-4 shrink-0 text-green-600" />
+                                    {tab === "th" ? "จุดแข็ง" : "Strengths"} ({strengths.length})
+                                  </span>
+                                </AccordionTrigger>
+                                <AccordionContent className="pb-3">
+                                  <ul className="space-y-2">
+                                    {strengths.map((item, i) => (
+                                      <li key={i} className="flex items-start gap-2 text-sm text-foreground">
+                                        <CheckCircle2 className="h-3.5 w-3.5 shrink-0 mt-0.5 text-green-500" />
+                                        {item}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </AccordionContent>
+                              </AccordionItem>
+
+                              {/* Weaknesses */}
+                              <AccordionItem value="weaknesses" className="border border-red-200 rounded-lg px-4 data-[state=open]:bg-red-50/50 transition-colors">
+                                <AccordionTrigger className="text-sm font-semibold text-red-700 hover:no-underline py-3 gap-2">
+                                  <span className="flex items-center gap-2">
+                                    <XCircle className="h-4 w-4 shrink-0 text-red-500" />
+                                    {tab === "th" ? "จุดอ่อน" : "Weaknesses"} ({weaknesses.length})
+                                  </span>
+                                </AccordionTrigger>
+                                <AccordionContent className="pb-3">
+                                  <ul className="space-y-2">
+                                    {weaknesses.map((item, i) => (
+                                      <li key={i} className="flex items-start gap-2 text-sm text-foreground">
+                                        <XCircle className="h-3.5 w-3.5 shrink-0 mt-0.5 text-red-400" />
+                                        {item}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </AccordionContent>
+                              </AccordionItem>
+
+                              {/* Advice */}
+                              <AccordionItem value="advice" className="border border-amber-200 rounded-lg px-4 data-[state=open]:bg-amber-50/50 transition-colors">
+                                <AccordionTrigger className="text-sm font-semibold text-amber-700 hover:no-underline py-3 gap-2">
+                                  <span className="flex items-center gap-2">
+                                    <Lightbulb className="h-4 w-4 shrink-0 text-amber-500" />
+                                    {tab === "th" ? "คำแนะนำ" : "Advice"} ({advice.length})
+                                  </span>
+                                </AccordionTrigger>
+                                <AccordionContent className="pb-3">
+                                  <ul className="space-y-2">
+                                    {advice.map((item, i) => (
+                                      <li key={i} className="flex items-start gap-2 text-sm text-foreground">
+                                        <Lightbulb className="h-3.5 w-3.5 shrink-0 mt-0.5 text-amber-500" />
+                                        {item}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </AccordionContent>
+                              </AccordionItem>
+                            </Accordion>
+                          </TabsContent>
+                        );
+                      })}
+                    </Tabs>
+
+                    {/* Refinement input */}
+                    <div className="flex gap-2 pt-1">
+                      <Input
+                        placeholder="Want different feedback? (e.g. 'Focus on DevOps gaps')"
+                        value={scoreFeedback}
+                        onChange={(e) => setScoreFeedback(e.target.value)}
+                        disabled={isScoring}
+                        className="text-sm"
+                      />
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={handleScoreResume}
+                        disabled={isScoring}
+                        className="shrink-0"
+                      >
+                        {isScoring ? (
+                          <>
+                            <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />
+                            Refining...
+                          </>
+                        ) : (
+                          "✨ Refine"
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {!scoreData && !isScoring && (
+                  <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground space-y-2">
+                    <Target className="h-10 w-10 opacity-20" />
+                    <p className="text-sm">
+                      Click <span className="font-medium">Analyze Match</span> to get a compatibility
+                      score between your master resume and this role.
+                    </p>
+                    <p className="text-xs opacity-70">
+                      Requires a master resume saved in your Profile settings.
                     </p>
                   </div>
                 )}
