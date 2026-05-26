@@ -27,6 +27,7 @@ import {
   User,
   Zap,
   MapPin,
+  Sparkles,
 } from "lucide-react";
 
 const MAX_TOKENS = 100_000;
@@ -123,6 +124,9 @@ export default function ProfilePage() {
     setResumeMessage(null);
     try {
       await api.put("/api/users/profile", { baseResume: resume });
+      if (storeUser && token) {
+        setAuth(token, { ...storeUser, hasResume: !!resume.trim() });
+      }
       setResumeMessage({
         type: "success",
         text: "Master resume updated successfully!",
@@ -157,6 +161,9 @@ export default function ProfilePage() {
         headers: { "Content-Type": "multipart/form-data" },
       });
       setResume(res.data.baseResume);
+      if (storeUser && token) {
+        setAuth(token, { ...storeUser, hasResume: !!res.data.baseResume });
+      }
       try {
         const profile = await api.get("/api/users/profile");
         setTokenUsage(profile.data.tokenUsage ?? 0);
@@ -203,34 +210,6 @@ export default function ProfilePage() {
           <p className="text-muted-foreground mt-1">
             Manage your career profile and master resume for AI tailoring.
           </p>
-        </div>
-        <div className="shrink-0 flex gap-2">
-          <input
-            type="file"
-            accept="application/pdf"
-            className="hidden"
-            ref={fileInputRef}
-            onChange={handleFileUpload}
-            disabled={isUploading || isSavingResume}
-          />
-          <Button
-            variant="outline"
-            className="gap-1.5"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={isUploading || isSavingResume}
-          >
-            {isUploading ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Extracting...
-              </>
-            ) : (
-              <>
-                <Upload className="h-4 w-4" />
-                Upload PDF Resume
-              </>
-            )}
-          </Button>
         </div>
       </div>
 
@@ -390,6 +369,16 @@ export default function ProfilePage() {
                     Over 80% used.
                   </div>
                 )}
+
+                <div className="mt-4 p-3 bg-muted/50 rounded-lg border border-border">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Sparkles className="h-4 w-4 text-primary" />
+                    <span className="text-sm font-semibold text-foreground">Powered by Gemini 3.1 Flash Lite</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground leading-relaxed mt-1.5">
+                    Your AI assistant consumes tokens when extracting job details, analyzing commute times, tailoring resumes, simulating interviews, and drafting emails.
+                  </p>
+                </div>
               </CardContent>
             </Card>
           );
@@ -398,14 +387,45 @@ export default function ProfilePage() {
 
       {/* ── Master Resume card ── */}
       <Card className="border-border">
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <FileText className="h-5 w-5 text-primary" />
-            <CardTitle>Master Resume (Markdown)</CardTitle>
+        <CardHeader className="flex flex-row items-start sm:items-center justify-between space-y-0 pb-4">
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-2">
+              <FileText className="h-5 w-5 text-primary" />
+              <CardTitle>Master Resume (Markdown)</CardTitle>
+            </div>
+            <CardDescription>
+              Your AI-optimized master resume. Gemini uses this to tailor applications.
+            </CardDescription>
           </div>
-          <CardDescription>
-            Your AI-optimized master resume. Gemini uses this to tailor applications.
-          </CardDescription>
+          <div className="shrink-0 flex gap-2">
+            <input
+              type="file"
+              accept="application/pdf"
+              className="hidden"
+              ref={fileInputRef}
+              onChange={handleFileUpload}
+              disabled={isUploading || isSavingResume}
+            />
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5 shrink-0"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isUploading || isSavingResume}
+            >
+              {isUploading ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Extracting...
+                </>
+              ) : (
+                <>
+                  <Upload className="h-4 w-4" />
+                  Upload PDF
+                </>
+              )}
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           {resumeMessage && (
@@ -456,6 +476,7 @@ export default function ProfilePage() {
               )}
             </Button>
           </div>
+
         </CardContent>
       </Card>
     </div>

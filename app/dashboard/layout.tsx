@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { BriefcaseBusiness, LogOut, User, Settings, Languages } from "lucide-react";
+import { BriefcaseBusiness, LogOut, User, Settings, Languages, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useLangStore } from "@/store/useLangStore";
@@ -41,7 +41,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <div className="max-w-screen-xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5">
             <BriefcaseBusiness className="h-5 w-5 text-primary" />
-            <span className="font-semibold text-foreground tracking-tight">JobTracker</span>
+            <span className="font-semibold text-foreground tracking-tight flex items-center gap-2">
+              JobTracker
+              <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded font-black uppercase tracking-wider">v1.0</span>
+            </span>
           </Link>
           <div className="flex items-center gap-3">
             <Button
@@ -59,6 +62,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <span className={lang === "th" ? "text-primary" : ""}>TH</span>
               </span>
             </Button>
+
+            {user && user.hasResume === false && (
+              <Link href="/dashboard/profile" className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 text-amber-700 rounded-full text-xs font-semibold border border-amber-200 animate-pulse hover:bg-amber-100 transition-colors" title="Upload your master resume in Profile to unlock AI features">
+                <AlertCircle className="h-3.5 w-3.5" />
+                Missing Resume
+              </Link>
+            )}
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

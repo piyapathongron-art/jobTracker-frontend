@@ -32,4 +32,5 @@ export interface AuthUser {
   email: string;
   homeLocation?: string;
   tokenUsage?: number;
+  hasResume?: boolean;
 }

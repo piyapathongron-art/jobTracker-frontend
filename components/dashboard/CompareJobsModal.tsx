@@ -100,7 +100,7 @@ export function CompareJobsModal({ jobs, open, onOpenChange }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[95vw] lg:max-w-6xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-2xl font-bold">
             <Sparkles className="h-6 w-6 text-primary" />
@@ -110,7 +110,7 @@ export function CompareJobsModal({ jobs, open, onOpenChange }: Props) {
 
         <div className="mt-6 space-y-8">
           {/* Comparison Grid */}
-          <div className={`grid grid-cols-1 md:grid-cols-${jobs.length} gap-4`}>
+          <div className={`grid grid-cols-1 ${jobs.length === 3 ? "lg:grid-cols-3" : "md:grid-cols-2"} gap-4`}>
             {jobs.map((job) => {
               const aiData = data?.comparisons.find((c) => c.jobId === job.id);
               const isHighest = highestSalary > 0 && (job.salaryMax === highestSalary || (!job.salaryMax && job.salaryMin === highestSalary));
