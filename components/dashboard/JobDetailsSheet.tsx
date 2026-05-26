@@ -78,6 +78,7 @@ interface TailoredData {
 }
 
 const EMAIL_TYPES = [
+  "Initial Application Outreach",
   "Follow-up on Application",
   "Thank You (Post-Interview)",
   "Offer Negotiation",
@@ -114,7 +115,7 @@ export function JobDetailsSheet({ job, open, onOpenChange }: Props) {
 
   // Email Drafter state
   const [selectedEmailType, setSelectedEmailType] = useState<EmailType>(
-    "Follow-up on Application"
+    "Initial Application Outreach"
   );
   const [isDraftingEmail, setIsDraftingEmail] = useState(false);
   const [draftedEmail, setDraftedEmail] = useState<DraftedEmail | null>(null);
@@ -234,6 +235,18 @@ export function JobDetailsSheet({ job, open, onOpenChange }: Props) {
     setTimeout(() => setSuccessMessage(null), 3000);
   }
 
+  function getStatusBadgeStyle(status: string) {
+    switch (status) {
+      case "WISHLIST": return "bg-slate-100 text-slate-700 border-slate-200";
+      case "APPLIED": return "bg-blue-50 text-blue-700 border-blue-200";
+      case "INTERVIEWING": return "bg-violet-50 text-violet-700 border-violet-200";
+      case "OFFERED": return "bg-emerald-50 text-emerald-700 border-emerald-200";
+      case "REJECTED": return "bg-red-50 text-red-700 border-red-200";
+      case "GHOSTED": return "bg-orange-50 text-orange-700 border-orange-200";
+      default: return "bg-slate-100 text-slate-700 border-slate-200";
+    }
+  }
+
   return (
     <Sheet open={open} onOpenChange={handleSheetClose}>
       <SheetContent className="sm:max-w-2xl overflow-y-auto">
@@ -241,7 +254,7 @@ export function JobDetailsSheet({ job, open, onOpenChange }: Props) {
           <div className="flex items-center justify-between">
             <Badge
               variant="outline"
-              className="rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider"
+              className={`rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${getStatusBadgeStyle(job.status)}`}
             >
               {job.status}
             </Badge>

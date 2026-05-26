@@ -3,17 +3,18 @@
 import { Draggable } from "@hello-pangea/dnd";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import type { JobApplication } from "@/lib/types";
-import { MapPin, DollarSign, Calendar } from "lucide-react";
+import { MapPin, Calendar, Wallet } from "lucide-react";
 
-function fmt(n: number) {
-  return n >= 1000 ? `$${(n / 1000).toFixed(0)}k` : `$${n}`;
-}
-
-function salary(min?: number | null, max?: number | null) {
+function formatSalary(min?: number | null, max?: number | null, currency?: string, period?: string) {
   if (!min && !max) return null;
-  if (min && max) return `${fmt(min)} – ${fmt(max)}`;
-  if (min) return `${fmt(min)}+`;
-  return `up to ${fmt(max!)}`;
+  const sym = currency === "THB" ? "฿" : "$";
+  const p = period === "YEARLY" ? "/yr" : period === "HOURLY" ? "/hr" : "/mo";
+  
+  const fmt = (n: number) => (n >= 1000 ? `${sym}${(n / 1000).toFixed(0)}k` : `${sym}${n}`);
+
+  if (min && max) return `${fmt(min)} – ${fmt(max)} ${p}`;
+  if (min) return `${fmt(min)}+ ${p}`;
+  return `up to ${fmt(max!)} ${p}`;
 }
 
 interface Props {
@@ -23,7 +24,7 @@ interface Props {
 }
 
 export function JobCard({ job, index, onClick }: Props) {
-  const sal = salary(job.salaryMin, job.salaryMax);
+  const sal = formatSalary(job.salaryMin, job.salaryMax, job.salaryCurrency, job.salaryPeriod);
   const applied = job.appliedAt
     ? new Date(job.appliedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })
     : null;
@@ -55,7 +56,7 @@ export function JobCard({ job, index, onClick }: Props) {
               )}
               {sal && (
                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                  <DollarSign className="h-3 w-3 shrink-0" />
+                  <Wallet className="h-3 w-3 shrink-0" />
                   <span>{sal}</span>
                 </div>
               )}
