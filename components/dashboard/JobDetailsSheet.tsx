@@ -8,6 +8,15 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogClose,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -48,6 +57,7 @@ import {
   Check,
   Target,
   XCircle,
+  Trash2,
 } from "lucide-react";
 import { JobForm } from "./JobForm";
 import { useJobStore } from "@/store/useJobStore";
@@ -93,6 +103,7 @@ type EmailType = (typeof EMAIL_TYPES)[number];
 
 export function JobDetailsSheet({ job, open, onOpenChange }: Props) {
   const updateJobDetails = useJobStore((s) => s.updateJobDetails);
+  const deleteJob = useJobStore((s) => s.deleteJob);
   const lang = useLangStore((s) => s.lang);
   const t = getDictionary(lang);
   const jobCache = useAiCacheStore((s) => (job ? s.cache[job.id] : undefined));
@@ -161,6 +172,7 @@ export function JobDetailsSheet({ job, open, onOpenChange }: Props) {
 
   // Edit state
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   useEffect(() => {
     if (!job) return;
@@ -339,6 +351,13 @@ export function JobDetailsSheet({ job, open, onOpenChange }: Props) {
     setTimeout(() => setSuccessMessage(null), 3000);
   }
 
+  async function handleDeleteJob() {
+    if (!job) return;
+    setIsDeleteDialogOpen(false);
+    await deleteJob(job.id);
+    onOpenChange(false);
+  }
+
   function getStatusBadgeStyle(status: string) {
     switch (status) {
       case "WISHLIST": return "bg-slate-100 text-slate-700 border-slate-200";
@@ -368,21 +387,23 @@ export function JobDetailsSheet({ job, open, onOpenChange }: Props) {
                   <CheckCircle2 className="h-3 w-3" /> {successMessage}
                 </span>
               )}
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 gap-1.5 text-muted-foreground hover:text-foreground"
-                onClick={() => setIsEditing(!isEditing)}
-              >
-                <Pencil className="h-3.5 w-3.5" />
-                {isEditing ? "Cancel" : "Edit"}
-              </Button>
             </div>
           </div>
 
           {!isEditing && (
             <div>
-              <SheetTitle className="text-2xl font-bold">{job.role}</SheetTitle>
+              <div className="flex items-center gap-3 flex-wrap">
+                <SheetTitle className="text-2xl font-bold leading-tight">{job.role}</SheetTitle>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 gap-1 px-2 text-xs text-muted-foreground hover:text-foreground shrink-0 border border-muted"
+                  onClick={() => setIsEditing(true)}
+                >
+                  <Pencil className="h-3 w-3" />
+                  Edit
+                </Button>
+              </div>
               <SheetDescription className="flex items-center gap-1.5 text-base mt-1">
                 <Building2 className="h-4 w-4" />
                 {job.company}
@@ -509,6 +530,18 @@ export function JobDetailsSheet({ job, open, onOpenChange }: Props) {
                   <div className="p-4 rounded-lg bg-muted/50 border border-border text-sm whitespace-pre-wrap leading-relaxed">
                     {job.notes || "No personal notes provided."}
                   </div>
+                </div>
+
+                <div className="flex justify-end pt-4 mt-6 border-t border-border">
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    className="gap-1.5"
+                    onClick={() => setIsDeleteDialogOpen(true)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    Delete Job
+                  </Button>
                 </div>
               </TabsContent>
 
@@ -1283,6 +1316,25 @@ export function JobDetailsSheet({ job, open, onOpenChange }: Props) {
             </Tabs>
           )}
         </div>
+        
+        <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Are you sure?</DialogTitle>
+              <DialogDescription>
+                This will permanently delete this job application and all associated data (AI tailored content, emails, notes). This action cannot be undone.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="mt-4 gap-2">
+              <DialogClose asChild>
+                <Button variant="outline">Cancel</Button>
+              </DialogClose>
+              <Button variant="destructive" onClick={handleDeleteJob}>
+                Delete
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </SheetContent>
     </Sheet>
   );
