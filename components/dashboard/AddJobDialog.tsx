@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/dialog";
 import { useJobStore } from "@/store/useJobStore";
 import { JobForm } from "./JobForm";
+import type { NewJob } from "@/store/useJobStore";
 
 interface Props {
   open: boolean;
@@ -17,7 +18,7 @@ interface Props {
 export function AddJobDialog({ open, onOpenChange }: Props) {
   const addJob = useJobStore((s) => s.addJob);
 
-  async function handleSubmit(data: any) {
+  async function handleSubmit(data: NewJob) {
     await addJob(data);
     onOpenChange(false);
   }

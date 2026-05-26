@@ -19,7 +19,10 @@ export function Board() {
   const [sheetOpen, setSheetOpen] = useState(false);
 
   useEffect(() => {
-    setIsMounted(true);
+    let mounted = true;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (mounted) setIsMounted(true);
+    return () => { mounted = false; };
   }, []);
 
   function onDragEnd(result: DropResult) {

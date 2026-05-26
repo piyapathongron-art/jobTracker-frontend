@@ -16,7 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { BriefcaseBusiness, Loader2 } from "lucide-react";
-import { GoogleLogin } from "@react-oauth/google";
+import { GoogleLogin, CredentialResponse } from "@react-oauth/google";
 import { api } from "@/lib/axios";
 import { useAuthStore } from "@/store/useAuthStore";
 import type { AuthUser } from "@/lib/types";
@@ -39,7 +39,7 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  async function handleGoogleSuccess(credentialResponse: any) {
+  async function handleGoogleSuccess(credentialResponse: CredentialResponse) {
     setError("");
     setLoading(true);
     try {

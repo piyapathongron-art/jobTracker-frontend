@@ -64,8 +64,11 @@ export function CompareJobsModal({ jobs, open, onOpenChange }: Props) {
   // Reset results when modal closes or jobs change
   useEffect(() => {
     if (!open) {
-      setData(null);
-      setError(null);
+      const reset = () => {
+        setData(null);
+        setError(null);
+      };
+      reset();
     }
   }, [open, jobs]);
 
@@ -78,7 +81,8 @@ export function CompareJobsModal({ jobs, open, onOpenChange }: Props) {
         jobIds: jobs.map((j) => j.id),
       });
       setData(res.data);
-    } catch (err: any) {
+    } catch (error) {
+      const err = error as { response?: { data?: { error?: string } } };
       setError(err.response?.data?.error || "Failed to compare jobs.");
     } finally {
       setIsLoading(false);

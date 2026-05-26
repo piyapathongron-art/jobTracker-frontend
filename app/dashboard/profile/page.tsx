@@ -93,7 +93,8 @@ export default function ProfilePage() {
         setAuth(token, { id: res.data.id, name: res.data.name, email: res.data.email });
       }
       setNameMessage({ type: "success", text: "Display name updated!" });
-    } catch (err: any) {
+    } catch (error) {
+      const err = error as { response?: { data?: { error?: string } } };
       setNameMessage({
         type: "error",
         text: err.response?.data?.error || "Failed to save name.",
@@ -109,7 +110,8 @@ export default function ProfilePage() {
     try {
       await api.put("/api/users/profile", { homeLocation: homeLocation.trim() });
       setLocationMessage({ type: "success", text: "Home location updated!" });
-    } catch (err: any) {
+    } catch (error) {
+      const err = error as { response?: { data?: { error?: string } } };
       setLocationMessage({
         type: "error",
         text: err.response?.data?.error || "Failed to save location.",
@@ -131,7 +133,8 @@ export default function ProfilePage() {
         type: "success",
         text: "Master resume updated successfully!",
       });
-    } catch (err: any) {
+    } catch (error) {
+      const err = error as { response?: { data?: { error?: string } } };
       setResumeMessage({
         type: "error",
         text: err.response?.data?.error || "Failed to save resume.",
@@ -172,7 +175,8 @@ export default function ProfilePage() {
         type: "success",
         text: "Resume extracted and updated successfully!",
       });
-    } catch (err: any) {
+    } catch (error) {
+      const err = error as { response?: { data?: { error?: string } } };
       setResumeMessage({
         type: "error",
         text:

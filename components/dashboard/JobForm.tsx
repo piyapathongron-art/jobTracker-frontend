@@ -22,6 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { JobApplication } from "@/lib/types";
+import type { NewJob } from "@/store/useJobStore";
 import { Loader2, Sparkles } from "lucide-react";
 import { api } from "@/lib/axios";
 import { useState } from "react";
@@ -87,7 +88,7 @@ type JobFormValues = z.infer<typeof jobFormSchema>;
 
 interface JobFormProps {
   initialData?: Partial<JobApplication>;
-  onSubmit: (data: any) => Promise<void>;
+  onSubmit: (data: NewJob) => Promise<void>;
   onCancel: () => void;
   submitLabel?: string;
 }
@@ -136,7 +137,8 @@ export function JobForm({ initialData, onSubmit, onCancel, submitLabel = "Save" 
       if (data.salaryMax)      form.setValue("salaryMax", data.salaryMax.toString(), { shouldValidate: true });
       if (data.jobDescription) form.setValue("jobDescription", data.jobDescription, { shouldValidate: true });
       if (data.notes)          form.setValue("notes",     data.notes,    { shouldValidate: true });
-    } catch (err: any) {
+    } catch (error) {
+      const err = error as { response?: { data?: { error?: string } } };
       setParseError(err.response?.data?.error || "AI parsing failed.");
     } finally {
       setIsParsing(false);
@@ -161,7 +163,8 @@ export function JobForm({ initialData, onSubmit, onCancel, submitLabel = "Save" 
         notes:          values.notes?.trim()    || null,
         appliedAt:      values.appliedAt        ? new Date(values.appliedAt).toISOString() : null,
       });
-    } catch (err: any) {
+    } catch (error) {
+      const err = error as { response?: { data?: { error?: string } } };
       setSubmitError(err.response?.data?.error || "Failed to save job.");
     }
   }

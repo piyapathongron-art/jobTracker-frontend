@@ -57,7 +57,12 @@ export default function Home() {
   // Hydration guard: avoid SSR mismatch when reading persisted auth state
   const user = useAuthStore((s) => s.user);
   const [isMounted, setIsMounted] = useState(false);
-  useEffect(() => setIsMounted(true), []);
+  useEffect(() => {
+    let mounted = true;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (mounted) setIsMounted(true);
+    return () => { mounted = false; };
+  }, []);
 
   const isLoggedIn = isMounted && !!user;
 

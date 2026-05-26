@@ -25,8 +25,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { api } from "@/lib/axios";
+import type { NewJob } from "@/store/useJobStore";
 import type { JobApplication } from "@/lib/types";
+import { api } from "@/lib/axios";
 import {
   Loader2,
   Sparkles,
@@ -163,6 +164,7 @@ export function JobDetailsSheet({ job, open, onOpenChange }: Props) {
 
   useEffect(() => {
     if (!job) return;
+    /* eslint-disable react-hooks/set-state-in-effect */
     setTailoredData(jobCache?.coverLetter ?? null);
     setInterviewQuestions(jobCache?.interview?.questions ?? null);
     const cachedEmail = jobCache?.emails?.[selectedEmailType];
@@ -175,6 +177,7 @@ export function JobDetailsSheet({ job, open, onOpenChange }: Props) {
     setScoreError(null);
     setBodyCopied(false);
     setCoverCopied(null);
+    /* eslint-enable react-hooks/set-state-in-effect */
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [job?.id]);
 
@@ -205,7 +208,8 @@ export function JobDetailsSheet({ job, open, onOpenChange }: Props) {
       setTailoredData(res.data);
       setCoverLetterCache(job.id, res.data);
       setTailorFeedback("");
-    } catch (err: any) {
+    } catch (error) {
+      const err = error as { response?: { data?: { error?: string } } };
       setTailorError(
         err.response?.data?.error || "Failed to generate tailored content."
       );
@@ -225,7 +229,8 @@ export function JobDetailsSheet({ job, open, onOpenChange }: Props) {
       setInterviewQuestions(res.data.questions);
       setInterviewCache(job.id, { questions: res.data.questions });
       setInterviewFeedback("");
-    } catch (err: any) {
+    } catch (error) {
+      const err = error as { response?: { data?: { error?: string } } };
       setInterviewError(
         err.response?.data?.error ||
           "Failed to generate interview questions. Please try again."
@@ -248,7 +253,8 @@ export function JobDetailsSheet({ job, open, onOpenChange }: Props) {
       setDraftedEmail(res.data);
       setEmailCache(job.id, selectedEmailType, res.data);
       setEmailFeedback("");
-    } catch (err: any) {
+    } catch (error) {
+      const err = error as { response?: { data?: { error?: string } } };
       setEmailError(
         err.response?.data?.error ||
           "Failed to draft the email. Please try again."
@@ -269,7 +275,8 @@ export function JobDetailsSheet({ job, open, onOpenChange }: Props) {
       setScoreData(res.data);
       setResumeScoreCache(job.id, res.data);
       setScoreFeedback("");
-    } catch (err: any) {
+    } catch (error) {
+      const err = error as { response?: { data?: { error?: string } } };
       setScoreError(
         err.response?.data?.error || "Failed to analyze resume match. Please try again."
       );
@@ -283,14 +290,15 @@ export function JobDetailsSheet({ job, open, onOpenChange }: Props) {
     setIsOptimizing(true);
     setOptimizeError(null);
     try {
-      const payload: Record<string, any> = { jobId: job.id, scoreData };
+      const payload: Record<string, unknown> = { jobId: job.id, scoreData };
       if (optimizeFeedback.trim()) payload.feedback = optimizeFeedback.trim();
       const res = await api.post("/api/ai/optimize-resume", payload);
       setOptimizedData(res.data);
       setOptimizedResumeCache(job.id, res.data);
       setOptimizeFeedback("");
       setOptimizeCopied(null);
-    } catch (err: any) {
+    } catch (error) {
+      const err = error as { response?: { data?: { error?: string } } };
       setOptimizeError(
         err.response?.data?.error || "Failed to optimize resume. Please try again."
       );
@@ -323,7 +331,7 @@ export function JobDetailsSheet({ job, open, onOpenChange }: Props) {
     setTimeout(() => setCoverCopied(null), 2000);
   }
 
-  async function handleEditSubmit(data: any) {
+  async function handleEditSubmit(data: NewJob) {
     if (!job) return;
     await updateJobDetails(job.id, data);
     setIsEditing(false);
@@ -513,7 +521,7 @@ export function JobDetailsSheet({ job, open, onOpenChange }: Props) {
                       Resume & Cover Letter Tailor
                     </h3>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      Compares your master resume against this job's details.
+                      Compares your master resume against this job&apos;s details.
                     </p>
                   </div>
                   <Button
@@ -968,7 +976,7 @@ export function JobDetailsSheet({ job, open, onOpenChange }: Props) {
                       Resume Match &amp; Score
                     </h3>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      Analyzes your master resume against this role's requirements.
+                      Analyzes your master resume against this role&apos;s requirements.
                     </p>
                   </div>
                   <Button

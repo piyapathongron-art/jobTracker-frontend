@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { BriefcaseBusiness, LogOut, User, Settings, Languages, AlertCircle } from "lucide-react";
+import { BriefcaseBusiness, LogOut, Settings, Languages, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useLangStore } from "@/store/useLangStore";
