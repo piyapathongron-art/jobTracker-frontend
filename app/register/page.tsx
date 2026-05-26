@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { BriefcaseBusiness, Loader2 } from "lucide-react";
+import { GoogleLogin } from "@react-oauth/google";
 import { api } from "@/lib/axios";
 import { useAuthStore } from "@/store/useAuthStore";
 import type { AuthUser } from "@/lib/types";
@@ -39,6 +40,25 @@ export default function RegisterPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  async function handleGoogleSuccess(credentialResponse: any) {
+    setError("");
+    setLoading(true);
+    try {
+      const { data } = await api.post<RegisterResponse>("/api/auth/google", {
+        token: credentialResponse.credential,
+      });
+      setAuth(data.token, data.user);
+      router.push("/dashboard");
+    } catch (err) {
+      if (axios.isAxiosError(err)) {
+        setError(err.response?.data?.error ?? "Google sign up failed.");
+      } else {
+        setError("Google sign up failed.");
+      }
+      setLoading(false);
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -85,6 +105,27 @@ export default function RegisterPage() {
                 {error}
               </p>
             )}
+
+            <div className="flex flex-col items-center justify-center space-y-4">
+              <div className="w-full">
+                <GoogleLogin
+                  onSuccess={handleGoogleSuccess}
+                  onError={() => setError("Google sign up failed.")}
+                  useOneTap
+                  theme="outline"
+                  shape="rectangular"
+                  width="336"
+                />
+              </div>
+
+              <div className="relative w-full flex items-center gap-4 py-2">
+                <div className="h-px bg-border flex-1" />
+                <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest bg-background px-2">
+                  OR
+                </span>
+                <div className="h-px bg-border flex-1" />
+              </div>
+            </div>
 
             <form onSubmit={handleSubmit} className="space-y-3">
               <div className="space-y-1.5">
