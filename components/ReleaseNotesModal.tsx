@@ -15,9 +15,10 @@ import { Button } from "@/components/ui/button";
 // IMPORTANT: Bump CURRENT_APP_VERSION and append a new entry to RELEASE_NOTES
 // every time a new feature or hotfix ships. Other agents MUST update both
 // constants below so users see the "What's New" modal once per release.
-const CURRENT_APP_VERSION = "v1.1.0";
+const CURRENT_APP_VERSION = "v1.2.0";
 
 const RELEASE_NOTES: string[] = [
+  "✨ Added Smart URL Scraper and Job Source tracking",
   "✨ Added What's New release notes modal",
   "✨ Added Google OAuth integration",
   "📱 Refactored dashboard, dialogs, and forms for mobile (iPhone 14) responsiveness",

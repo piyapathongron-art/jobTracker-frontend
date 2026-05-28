@@ -21,6 +21,7 @@ export interface JobApplication {
   workMode: string;
   jobDescription: string | null;
   notes: string | null;
+  source: string | null;
   appliedAt: string | null;
   createdAt: string;
   updatedAt: string;

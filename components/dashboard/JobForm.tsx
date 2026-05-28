@@ -81,8 +81,25 @@ const jobFormSchema = z.object({
   workMode: z.enum(["ONSITE", "HYBRID", "REMOTE"]),
   jobDescription: z.string().optional(),
   notes: z.string().optional(),
+  source: z.string().optional(),
   appliedAt: z.string().optional(),
 });
+
+const SOURCE_OPTIONS = [
+  "LinkedIn",
+  "JobsDB",
+  "Indeed",
+  "Glassdoor",
+  "Workday",
+  "Greenhouse",
+  "Lever",
+  "Ashby",
+  "Wellfound",
+  "Seek",
+  "Company Site",
+  "Referral",
+  "Other",
+] as const;
 
 type JobFormValues = z.infer<typeof jobFormSchema>;
 
@@ -109,6 +126,7 @@ export function JobForm({ initialData, onSubmit, onCancel, submitLabel = "Save" 
       workMode:       (initialData?.workMode as JobFormValues["workMode"]) ?? "ONSITE",
       jobDescription: initialData?.jobDescription ?? "",
       notes:          initialData?.notes    ?? "",
+      source:         initialData?.source   ?? "",
       appliedAt:      initialData?.appliedAt
         ? new Date(initialData.appliedAt).toISOString().split("T")[0]
         : "",
@@ -137,6 +155,7 @@ export function JobForm({ initialData, onSubmit, onCancel, submitLabel = "Save" 
       if (data.salaryMax)      form.setValue("salaryMax", data.salaryMax.toString(), { shouldValidate: true });
       if (data.jobDescription) form.setValue("jobDescription", data.jobDescription, { shouldValidate: true });
       if (data.notes)          form.setValue("notes",     data.notes,    { shouldValidate: true });
+      if (data.source)         form.setValue("source",    data.source,   { shouldValidate: true });
     } catch (error) {
       const err = error as { response?: { data?: { error?: string } } };
       setParseError(err.response?.data?.error || "AI parsing failed.");
@@ -161,6 +180,7 @@ export function JobForm({ initialData, onSubmit, onCancel, submitLabel = "Save" 
         workMode:       values.workMode,
         jobDescription: values.jobDescription?.trim() || null,
         notes:          values.notes?.trim()    || null,
+        source:         values.source?.trim()   || null,
         appliedAt:      values.appliedAt        ? new Date(values.appliedAt).toISOString() : null,
       });
     } catch (error) {
@@ -332,6 +352,30 @@ export function JobForm({ initialData, onSubmit, onCancel, submitLabel = "Save" 
             )}
           />
         </div>
+
+        {/* ── Source ── */}
+        <FormField
+          control={form.control}
+          name="source"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Source</FormLabel>
+              <Select value={field.value || ""} onValueChange={field.onChange} disabled={isSubmitting}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Where did you find this job?" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {SOURCE_OPTIONS.map((opt) => (
+                    <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
         {/* ── Salary Min + Max ── */}
         <div className="grid grid-cols-2 gap-4">
