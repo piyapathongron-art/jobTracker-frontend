@@ -26,11 +26,20 @@ import {
   ArrowLeft,
   User,
   Zap,
+  Link as LinkIcon,
   MapPin,
   Sparkles,
 } from "lucide-react";
 
-const MAX_TOKENS = 100_000;
+interface QuotaState {
+  tokenUsageTotal: number;
+  tokenUsageWindow: number;
+  tokenLimit: number;
+  scrapeUsageTotal: number;
+  scrapeUsageWindow: number;
+  scrapeLimit: number;
+  nextQuotaReset: string;
+}
 
 export default function ProfilePage() {
   const token = useAuthStore((s) => s.token);
@@ -55,7 +64,7 @@ export default function ProfilePage() {
 
   // Resume state
   const [resume, setResume] = useState("");
-  const [tokenUsage, setTokenUsage] = useState(0);
+  const [quota, setQuota] = useState<QuotaState | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSavingResume, setIsSavingResume] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -73,7 +82,15 @@ export default function ProfilePage() {
         setName(res.data.name || "");
         setHomeLocation(res.data.homeLocation || "");
         setResume(res.data.baseResume || "");
-        setTokenUsage(res.data.tokenUsage ?? 0);
+        setQuota({
+          tokenUsageTotal:   res.data.tokenUsageTotal   ?? 0,
+          tokenUsageWindow:  res.data.tokenUsageWindow  ?? 0,
+          tokenLimit:        res.data.tokenLimit        ?? 50_000,
+          scrapeUsageTotal:  res.data.scrapeUsageTotal  ?? 0,
+          scrapeUsageWindow: res.data.scrapeUsageWindow ?? 0,
+          scrapeLimit:       res.data.scrapeLimit       ?? 10,
+          nextQuotaReset:    res.data.nextQuotaReset    ?? new Date().toISOString(),
+        });
       } catch (err) {
         console.error("Failed to fetch profile:", err);
       } finally {
@@ -169,7 +186,15 @@ export default function ProfilePage() {
       }
       try {
         const profile = await api.get("/api/users/profile");
-        setTokenUsage(profile.data.tokenUsage ?? 0);
+        setQuota({
+          tokenUsageTotal:   profile.data.tokenUsageTotal   ?? 0,
+          tokenUsageWindow:  profile.data.tokenUsageWindow  ?? 0,
+          tokenLimit:        profile.data.tokenLimit        ?? 50_000,
+          scrapeUsageTotal:  profile.data.scrapeUsageTotal  ?? 0,
+          scrapeUsageWindow: profile.data.scrapeUsageWindow ?? 0,
+          scrapeLimit:       profile.data.scrapeLimit       ?? 10,
+          nextQuotaReset:    profile.data.nextQuotaReset    ?? new Date().toISOString(),
+        });
       } catch {}
       setResumeMessage({
         type: "success",
@@ -322,71 +347,125 @@ export default function ProfilePage() {
           </Card>
         </div>
 
-        {/* ── Token Usage card ── */}
-        {(() => {
-          const pct = Math.min(100, (tokenUsage / MAX_TOKENS) * 100);
-          const isWarn = tokenUsage >= 80_000 && tokenUsage < MAX_TOKENS;
-          const isCritical = tokenUsage >= MAX_TOKENS;
-          const accent = isCritical
-            ? "text-red-600"
-            : isWarn
-            ? "text-amber-600"
-            : "text-primary";
-          const indicator = isCritical
-            ? "[&>div]:bg-red-500"
-            : isWarn
-            ? "[&>div]:bg-amber-500"
-            : "[&>div]:bg-primary";
-          return (
-            <Card className="border-border">
-              <CardHeader>
-                <div className="flex items-center gap-2">
-                  <Zap className={`h-5 w-5 ${accent}`} />
-                  <CardTitle>AI Token Usage</CardTitle>
-                </div>
-                <CardDescription>
-                  Monthly cap of {MAX_TOKENS.toLocaleString()} tokens.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex items-baseline justify-between">
-                  <p className={`text-2xl font-bold tabular-nums ${accent}`}>
-                    {tokenUsage.toLocaleString()}
-                    <span className="text-sm font-medium text-muted-foreground ml-1.5">
-                      / {MAX_TOKENS.toLocaleString()}
-                    </span>
-                  </p>
-                  <p className={`text-sm font-semibold tabular-nums ${accent}`}>
-                    {pct.toFixed(1)}%
-                  </p>
-                </div>
-                <Progress value={pct} className={indicator} />
-                {isCritical && (
-                  <div className="flex items-start gap-2 p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
-                    <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
-                    Quota reached. AI features paused.
-                  </div>
-                )}
-                {isWarn && (
-                  <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-700 text-sm">
-                    <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
-                    Over 80% used.
-                  </div>
-                )}
+        {/* ── Quota cards ── */}
+        {quota && (
+          <div className="space-y-6">
+            {(() => {
+              const tokenPct = Math.min(100, (quota.tokenUsageWindow / quota.tokenLimit) * 100);
+              const tokenWarn = tokenPct >= 80 && tokenPct < 100;
+              const tokenCritical = tokenPct >= 100;
+              const tokenAccent = tokenCritical ? "text-red-600" : tokenWarn ? "text-amber-600" : "text-primary";
+              const tokenIndicator = tokenCritical
+                ? "[&>div]:bg-red-500"
+                : tokenWarn
+                ? "[&>div]:bg-amber-500"
+                : "[&>div]:bg-primary";
 
-                <div className="mt-4 p-3 bg-muted/50 rounded-lg border border-border">
-                  <div className="flex items-center gap-2 mb-1">
-                    <Sparkles className="h-4 w-4 text-primary" />
-                    <span className="text-sm font-semibold text-foreground">Powered by Gemini 3.1 Flash Lite</span>
+              const scrapePct = Math.min(100, (quota.scrapeUsageWindow / quota.scrapeLimit) * 100);
+              const scrapeWarn = scrapePct >= 80 && scrapePct < 100;
+              const scrapeCritical = scrapePct >= 100;
+              const scrapeAccent = scrapeCritical ? "text-red-600" : scrapeWarn ? "text-amber-600" : "text-primary";
+              const scrapeIndicator = scrapeCritical
+                ? "[&>div]:bg-red-500"
+                : scrapeWarn
+                ? "[&>div]:bg-amber-500"
+                : "[&>div]:bg-primary";
+
+              const resetDate = new Date(quota.nextQuotaReset);
+              const resetLabel = resetDate.toLocaleDateString(undefined, {
+                month: "short",
+                day: "numeric",
+                year: "numeric",
+              });
+
+              return (
+                <>
+                  <Card className="border-border">
+                    <CardHeader>
+                      <div className="flex items-center gap-2">
+                        <Zap className={`h-5 w-5 ${tokenAccent}`} />
+                        <CardTitle>AI Token Usage</CardTitle>
+                      </div>
+                      <CardDescription>Tokens used this week — resets {resetLabel}.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <div className="flex items-baseline justify-between">
+                        <p className={`text-2xl font-bold tabular-nums ${tokenAccent}`}>
+                          {quota.tokenUsageWindow.toLocaleString()}
+                          <span className="text-sm font-medium text-muted-foreground ml-1.5">
+                            / {quota.tokenLimit.toLocaleString()}
+                          </span>
+                        </p>
+                        <p className={`text-sm font-semibold tabular-nums ${tokenAccent}`}>
+                          {tokenPct.toFixed(1)}%
+                        </p>
+                      </div>
+                      <Progress value={tokenPct} className={tokenIndicator} />
+                      {tokenCritical && (
+                        <div className="flex items-start gap-2 p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
+                          <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+                          Weekly token quota reached. AI features paused until {resetLabel}.
+                        </div>
+                      )}
+                      {tokenWarn && (
+                        <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-700 text-sm">
+                          <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+                          Over 80% of weekly tokens used.
+                        </div>
+                      )}
+                      <p className="text-xs text-muted-foreground">
+                        Lifetime: <span className="font-medium tabular-nums">{quota.tokenUsageTotal.toLocaleString()}</span> tokens
+                      </p>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="border-border">
+                    <CardHeader>
+                      <div className="flex items-center gap-2">
+                        <LinkIcon className={`h-5 w-5 ${scrapeAccent}`} />
+                        <CardTitle>URL Scrape Usage</CardTitle>
+                      </div>
+                      <CardDescription>Scrapes used this week — resets {resetLabel}.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <div className="flex items-baseline justify-between">
+                        <p className={`text-2xl font-bold tabular-nums ${scrapeAccent}`}>
+                          {quota.scrapeUsageWindow}
+                          <span className="text-sm font-medium text-muted-foreground ml-1.5">
+                            / {quota.scrapeLimit}
+                          </span>
+                        </p>
+                        <p className={`text-sm font-semibold tabular-nums ${scrapeAccent}`}>
+                          {scrapePct.toFixed(0)}%
+                        </p>
+                      </div>
+                      <Progress value={scrapePct} className={scrapeIndicator} />
+                      {scrapeCritical && (
+                        <div className="flex items-start gap-2 p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
+                          <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+                          Weekly scrape quota reached. Resets {resetLabel}.
+                        </div>
+                      )}
+                      <p className="text-xs text-muted-foreground">
+                        Lifetime: <span className="font-medium tabular-nums">{quota.scrapeUsageTotal.toLocaleString()}</span> scrapes
+                      </p>
+                    </CardContent>
+                  </Card>
+
+                  <div className="p-3 bg-muted/50 rounded-lg border border-border">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Sparkles className="h-4 w-4 text-primary" />
+                      <span className="text-sm font-semibold text-foreground">Powered by Gemini & Firecrawl</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground leading-relaxed mt-1.5">
+                      Quotas reset weekly. Tokens fuel AI features; scrapes are used by the URL Auto-fill tool.
+                    </p>
                   </div>
-                  <p className="text-xs text-muted-foreground leading-relaxed mt-1.5">
-                    Your AI assistant consumes tokens when extracting job details, analyzing commute times, tailoring resumes, simulating interviews, and drafting emails.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })()}
+                </>
+              );
+            })()}
+          </div>
+        )}
       </div>
 
       {/* ── Master Resume card ── */}

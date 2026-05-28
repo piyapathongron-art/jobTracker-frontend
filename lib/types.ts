@@ -32,6 +32,20 @@ export interface AuthUser {
   name: string;
   email: string;
   homeLocation?: string;
-  tokenUsage?: number;
   hasResume?: boolean;
+}
+
+export interface UserProfile {
+  id: string;
+  name: string;
+  email: string;
+  baseResume: string | null;
+  homeLocation: string | null;
+  tokenUsageTotal: number;
+  tokenUsageWindow: number;
+  tokenLimit: number;
+  scrapeUsageTotal: number;
+  scrapeUsageWindow: number;
+  scrapeLimit: number;
+  nextQuotaReset: string;
 }

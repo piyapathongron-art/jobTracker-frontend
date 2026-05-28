@@ -15,9 +15,10 @@ import { Button } from "@/components/ui/button";
 // IMPORTANT: Bump CURRENT_APP_VERSION and append a new entry to RELEASE_NOTES
 // every time a new feature or hotfix ships. Other agents MUST update both
 // constants below so users see the "What's New" modal once per release.
-const CURRENT_APP_VERSION = "v1.2.3";
+const CURRENT_APP_VERSION = "v1.3.0";
 
 const RELEASE_NOTES: string[] = [
+  "✨ Added Weekly Auto-Resetting Quotas for AI Tokens and Smart Scraper to keep your usage healthy",
   "🐛 Fixed UI bug where Firecrawl scraper wasn't showing up on the real Dashboard",
   "✨ Added Tabbed UI for Job parsing and integrated Firecrawl V1 API for precise web scraping",
   "🐛 Fixed AI Scraper accuracy by migrating to Firecrawl and patched Source detection",
