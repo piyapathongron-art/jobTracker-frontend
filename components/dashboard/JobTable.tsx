@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   Table,
   TableBody,
@@ -17,7 +17,7 @@ import { useInsightsStore } from "@/store/useInsightsStore";
 import { JobDetailsSheet } from "./JobDetailsSheet";
 import { CompareJobsModal } from "./CompareJobsModal";
 import type { Status, JobApplication } from "@/lib/types";
-import { Trash2, Eye, Sparkles, X, Flame } from "lucide-react";
+import { Trash2, Eye, Sparkles, X, Flame, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 
 const STATUS_LABEL: Record<Status, string> = {
   WISHLIST:     "Wishlist",
@@ -37,6 +37,15 @@ const STATUS_VARIANT: Record<Status, string> = {
   GHOSTED:      "bg-orange-50 text-orange-700 border-orange-200",
 };
 
+const STATUS_WEIGHT: Record<Status, number> = {
+  WISHLIST: 1,
+  APPLIED: 2,
+  INTERVIEWING: 3,
+  OFFERED: 4,
+  REJECTED: 5,
+  GHOSTED: 6,
+};
+
 function fmt(n: number, currency: string) {
   const sym = currency === "USD" ? "$" : "฿";
   return n >= 1000 ? `${sym}${(n / 1000).toFixed(0)}k` : `${sym}${n}`;
@@ -53,6 +62,9 @@ function salary(min: number | null, max: number | null, currency: string, period
   return `${range} ${periodLabel}`;
 }
 
+type SortKey = "status" | "salary" | "appliedAt" | null;
+type SortDirection = "asc" | "desc";
+
 export function JobTable() {
   const jobs = useJobStore((s) => s.jobs);
   const deleteJob = useJobStore((s) => s.deleteJob);
@@ -65,6 +77,10 @@ export function JobTable() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [compareModalOpen, setCompareJobsModalOpen] = useState(false);
 
+  // Sorting state
+  const [sortKey, setSortKey] = useState<SortKey>(null);
+  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
+
   function handleRowClick(job: JobApplication) {
     setSelectedJob(job);
     setSheetOpen(true);
@@ -75,6 +91,51 @@ export function JobTable() {
       prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
     );
   };
+
+  const handleSort = (key: SortKey) => {
+    if (sortKey === key) {
+      if (sortDirection === "asc") setSortDirection("desc");
+      else setSortKey(null); // cycle to no sort
+    } else {
+      setSortKey(key);
+      setSortDirection("asc");
+    }
+  };
+
+  const getSortIcon = (key: SortKey) => {
+    if (sortKey !== key) return <ArrowUpDown className="ml-2 h-3.5 w-3.5 text-muted-foreground/50" />;
+    return sortDirection === "asc" 
+      ? <ArrowUp className="ml-2 h-3.5 w-3.5 text-foreground" />
+      : <ArrowDown className="ml-2 h-3.5 w-3.5 text-foreground" />;
+  };
+
+  const sortedJobs = useMemo(() => {
+    if (!sortKey) return jobs;
+    return [...jobs].sort((a, b) => {
+      let valA, valB;
+      
+      switch (sortKey) {
+        case "status":
+          valA = STATUS_WEIGHT[a.status];
+          valB = STATUS_WEIGHT[b.status];
+          break;
+        case "salary":
+          valA = a.salaryMax || a.salaryMin || 0;
+          valB = b.salaryMax || b.salaryMin || 0;
+          break;
+        case "appliedAt":
+          valA = a.appliedAt ? new Date(a.appliedAt).getTime() : 0;
+          valB = b.appliedAt ? new Date(b.appliedAt).getTime() : 0;
+          break;
+        default:
+          return 0;
+      }
+
+      if (valA < valB) return sortDirection === "asc" ? -1 : 1;
+      if (valA > valB) return sortDirection === "asc" ? 1 : -1;
+      return 0;
+    });
+  }, [jobs, sortKey, sortDirection]);
 
   const selectedJobs = jobs.filter((j) => selectedIds.includes(j.id));
 
@@ -92,29 +153,44 @@ export function JobTable() {
         onOpenChange={setCompareJobsModalOpen}
       />
 
-      <div className="rounded-xl border border-border overflow-x-auto relative w-full">
+      <div className="rounded-xl border border-border overflow-x-auto relative w-full shadow-sm">
         <Table className="min-w-[720px]">
           <TableHeader>
             <TableRow className="bg-muted/50">
               <TableHead className="w-10"></TableHead>
               <TableHead className="font-semibold text-foreground">Company</TableHead>
               <TableHead className="font-semibold text-foreground">Role</TableHead>
-              <TableHead className="font-semibold text-foreground">Status</TableHead>
+              <TableHead 
+                className="font-semibold text-foreground cursor-pointer hover:bg-muted/80 transition-colors select-none"
+                onClick={() => handleSort("status")}
+              >
+                <div className="flex items-center">Status {getSortIcon("status")}</div>
+              </TableHead>
               <TableHead className="font-semibold text-foreground">Location</TableHead>
-              <TableHead className="font-semibold text-foreground">Salary</TableHead>
-              <TableHead className="font-semibold text-foreground">Applied</TableHead>
+              <TableHead 
+                className="font-semibold text-foreground cursor-pointer hover:bg-muted/80 transition-colors select-none"
+                onClick={() => handleSort("salary")}
+              >
+                <div className="flex items-center">Salary {getSortIcon("salary")}</div>
+              </TableHead>
+              <TableHead 
+                className="font-semibold text-foreground cursor-pointer hover:bg-muted/80 transition-colors select-none"
+                onClick={() => handleSort("appliedAt")}
+              >
+                <div className="flex items-center">Applied {getSortIcon("appliedAt")}</div>
+              </TableHead>
               <TableHead className="w-20" />
             </TableRow>
           </TableHeader>
           <TableBody>
-            {jobs.length === 0 ? (
+            {sortedJobs.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={8} className="text-center py-16 text-muted-foreground">
                   No applications yet. Add your first one!
                 </TableCell>
               </TableRow>
             ) : (
-              jobs.map((job) => (
+              sortedJobs.map((job) => (
                 <TableRow 
                   key={job.id} 
                   className={`hover:bg-muted/40 transition-colors group cursor-pointer ${
