@@ -9,28 +9,90 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 
-// IMPORTANT: Bump CURRENT_APP_VERSION and append a new entry to RELEASE_NOTES
-// every time a new feature or hotfix ships. Other agents MUST update both
-// constants below so users see the "What's New" modal once per release.
-const CURRENT_APP_VERSION = "v1.4.1";
+// IMPORTANT: Prepend a new entry to RELEASES every time a feature or hotfix
+// ships. CURRENT_APP_VERSION is derived from RELEASES[0].
+type ChangeType = "feat" | "fix" | "hotfix" | "refactor";
 
-const RELEASE_NOTES: string[] = [
-  "🌱 Added automated Database Seeding to quickly populate Dev and Staging environments with rich test data.",
-  "🔥 Added Community Insights! See which companies are trending and highly competitive across the platform.",
-  "✨ Added Weekly Auto-Resetting Quotas for AI Tokens and Smart Scraper to keep your usage healthy",
-  "🐛 Fixed UI bug where Firecrawl scraper wasn't showing up on the real Dashboard",
-  "✨ Added Tabbed UI for Job parsing and integrated Firecrawl V1 API for precise web scraping",
-  "🐛 Fixed AI Scraper accuracy by migrating to Firecrawl and patched Source detection",
-  "✨ Added Smart URL Scraper and Job Source tracking",
-  "✨ Added What's New release notes modal",
-  "✨ Added Google OAuth integration",
-  "📱 Refactored dashboard, dialogs, and forms for mobile (iPhone 14) responsiveness",
-  "♻️ Refactored job form with react-hook-form, salary currency/period, and smart applied-at logic",
-  "🤖 Added AI iterative refinement for cover letters, interview questions, and email drafts",
+interface Release {
+  version: string;
+  date: string;
+  changes: { type: ChangeType; text: string }[];
+}
+
+const RELEASES: Release[] = [
+  {
+    version: "v1.4.1",
+    date: "2026-05-28",
+    changes: [
+      {
+        type: "feat",
+        text: "Added automated Database Seeding to quickly populate Dev and Staging environments with rich test data.",
+      },
+    ],
+  },
+  {
+    version: "v1.4.0",
+    date: "2026-05-28",
+    changes: [
+      {
+        type: "feat",
+        text: "Added Community Insights! See which companies are trending and highly competitive across the platform.",
+      },
+    ],
+  },
+  {
+    version: "v1.3.0",
+    date: "2026-05-28",
+    changes: [
+      {
+        type: "feat",
+        text: "Added Weekly Auto-Resetting Quotas for AI Tokens and Smart Scraper to keep your usage healthy.",
+      },
+    ],
+  },
+  {
+    version: "v1.2.3",
+    date: "2026-05-27",
+    changes: [
+      {
+        type: "fix",
+        text: "Fixed UI bug where Firecrawl scraper wasn't showing up on the real Dashboard.",
+      },
+      {
+        type: "feat",
+        text: "Added Tabbed UI for Job parsing and integrated Firecrawl V1 API for precise web scraping.",
+      },
+      {
+        type: "fix",
+        text: "Fixed AI Scraper accuracy by migrating to Firecrawl and patched Source detection.",
+      },
+      { type: "feat", text: "Added Smart URL Scraper and Job Source tracking." },
+    ],
+  },
+  {
+    version: "v1.1.0",
+    date: "2026-05-26",
+    changes: [
+      { type: "feat", text: "Added What's New release notes modal." },
+      { type: "feat", text: "Added Google OAuth integration." },
+      {
+        type: "refactor",
+        text: "Refactored dashboard, dialogs, and forms for mobile responsiveness.",
+      },
+      {
+        type: "feat",
+        text: "Added AI iterative refinement for cover letters, interview questions, and email drafts.",
+      },
+    ],
+  },
 ];
+
+const CURRENT_APP_VERSION = RELEASES[0]!.version;
 
 const STORAGE_KEY = "lastSeenVersion";
 
@@ -49,6 +111,12 @@ function getServerLastSeen(): string | null {
   return null;
 }
 
+function badgeVariantFor(type: ChangeType): "default" | "destructive" | "secondary" {
+  if (type === "feat") return "default";
+  if (type === "fix" || type === "hotfix") return "destructive";
+  return "secondary";
+}
+
 export function ReleaseNotesModal() {
   const lastSeen = useSyncExternalStore(subscribeToStorage, getLastSeen, getServerLastSeen);
   const [dismissed, setDismissed] = useState(false);
@@ -62,6 +130,9 @@ export function ReleaseNotesModal() {
     }
     setDismissed(true);
   };
+
+  const latestRelease = RELEASES[0]!;
+  const historyReleases = RELEASES.slice(1);
 
   return (
     <Dialog
@@ -78,13 +149,55 @@ export function ReleaseNotesModal() {
           </DialogDescription>
         </DialogHeader>
 
-        <ul className="space-y-2 py-2 text-sm text-foreground">
-          {RELEASE_NOTES.map((note) => (
-            <li key={note} className="leading-relaxed">
-              {note}
-            </li>
-          ))}
-        </ul>
+        <Tabs defaultValue="latest" className="w-full">
+          <TabsList className="w-full grid grid-cols-2">
+            <TabsTrigger value="latest" className="cursor-pointer">
+              Latest Update
+            </TabsTrigger>
+            <TabsTrigger value="history" className="cursor-pointer">
+              History Update
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="latest" className="space-y-4 py-4">
+            <div className="flex justify-between items-center border-b pb-2">
+              <span className="font-semibold text-base">{latestRelease.version}</span>
+              <span className="text-xs text-muted-foreground">{latestRelease.date}</span>
+            </div>
+            <ul className="space-y-3">
+              {latestRelease.changes.map((change, i) => (
+                <li key={i} className="flex gap-2 items-start text-sm">
+                  <Badge variant={badgeVariantFor(change.type)}>{change.type}</Badge>
+                  <span className="leading-relaxed">{change.text}</span>
+                </li>
+              ))}
+            </ul>
+          </TabsContent>
+
+          <TabsContent
+            value="history"
+            className="max-h-[300px] overflow-y-auto space-y-6 py-4 pr-2"
+          >
+            {historyReleases.map((release) => (
+              <div key={release.version} className="space-y-2">
+                <div className="flex justify-between items-center border-b pb-1">
+                  <span className="font-semibold text-sm">{release.version}</span>
+                  <span className="text-xs text-muted-foreground">{release.date}</span>
+                </div>
+                <ul className="space-y-2">
+                  {release.changes.map((change, i) => (
+                    <li key={i} className="flex gap-2 items-start text-sm">
+                      <span className="font-mono text-xs uppercase text-muted-foreground w-12 shrink-0">
+                        [{change.type}]
+                      </span>
+                      <span className="leading-tight text-muted-foreground">{change.text}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </TabsContent>
+        </Tabs>
 
         <div className="flex items-center gap-2 pt-2">
           <Checkbox
@@ -101,7 +214,7 @@ export function ReleaseNotesModal() {
         </div>
 
         <DialogFooter>
-          <Button onClick={handleClose} className="w-full sm:w-auto">
+          <Button onClick={handleClose} className="w-full sm:w-auto cursor-pointer">
             Got it
           </Button>
         </DialogFooter>
