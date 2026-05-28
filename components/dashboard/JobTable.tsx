@@ -188,30 +188,32 @@ export function JobTable() {
 
       {/* Floating Action Bar */}
       {selectedIds.length > 0 && (
-        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-8 duration-300">
-          <div className="bg-foreground text-background px-6 py-3 rounded-full shadow-2xl flex items-center gap-6 border border-border/10">
-            <p className="text-sm font-semibold">
-              {selectedIds.length} job{selectedIds.length > 1 ? "s" : ""} selected
-              <span className="text-muted ml-1.5 opacity-50 font-normal">(Max 3)</span>
+        <div className="fixed bottom-6 sm:bottom-8 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-8 duration-300 w-full max-w-[calc(100vw-2rem)] sm:max-w-max">
+          <div className="bg-foreground text-background px-4 py-2 sm:px-6 sm:py-3 rounded-full shadow-2xl flex items-center justify-between sm:justify-start gap-3 sm:gap-6 border border-border/10 whitespace-nowrap">
+            <p className="text-xs sm:text-sm font-semibold flex items-center">
+              {selectedIds.length} <span className="hidden sm:inline ml-1">job{selectedIds.length > 1 ? "s" : ""}</span>
+              <span className="sm:hidden ml-1">selected</span>
+              <span className="hidden sm:inline text-muted ml-1.5 opacity-50 font-normal">(Max 3)</span>
             </p>
-            <div className="h-4 w-px bg-background/20" />
-            <div className="flex items-center gap-2">
+            <div className="h-4 w-px bg-background/20 shrink-0" />
+            <div className="flex items-center gap-1.5 sm:gap-2">
               <Button
                 size="sm"
-                className="bg-primary text-primary-foreground hover:bg-primary/90 h-8 gap-1.5 rounded-full px-4"
+                className="bg-primary text-primary-foreground hover:bg-primary/90 h-7 sm:h-8 gap-1 sm:gap-1.5 rounded-full px-3 sm:px-4 text-xs font-bold"
                 disabled={selectedIds.length < 2}
                 onClick={() => setCompareJobsModalOpen(true)}
               >
-                <Sparkles className="h-3.5 w-3.5" />
-                Compare Jobs
+                <Sparkles className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                <span className="hidden sm:inline">Compare Jobs</span>
+                <span className="sm:hidden">Compare</span>
               </Button>
               <Button
                 size="icon"
                 variant="ghost"
-                className="h-8 w-8 hover:bg-background/10 rounded-full"
+                className="h-7 w-7 sm:h-8 sm:w-8 hover:bg-background/10 rounded-full shrink-0"
                 onClick={() => setSelectedIds([])}
               >
-                <X className="h-4 w-4" />
+                <X className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               </Button>
             </div>
           </div>

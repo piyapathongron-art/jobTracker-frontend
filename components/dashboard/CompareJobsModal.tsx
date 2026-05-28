@@ -104,7 +104,7 @@ export function CompareJobsModal({ jobs, open, onOpenChange }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[95vw] lg:max-w-6xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="w-screen h-[100dvh] max-w-none max-h-none rounded-none p-4 sm:p-6 sm:h-auto sm:max-h-[90vh] sm:max-w-[95vw] lg:max-w-6xl sm:rounded-xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-2xl font-bold">
             <Sparkles className="h-6 w-6 text-primary" />
