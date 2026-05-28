@@ -1,6 +1,6 @@
 "use client";
 
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
@@ -140,7 +140,7 @@ export function JobForm({ initialData, onSubmit, onCancel, submitLabel = "Save" 
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   const isTrending = useInsightsStore((s) => s.isTrending);
-  const watchedCompany = form.watch("company");
+  const watchedCompany = useWatch({ control: form.control, name: "company" });
   const companyIsTrending = isTrending(watchedCompany);
 
   // AI Parser state

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import {
   Dialog,
   DialogContent,
@@ -34,23 +34,33 @@ const RELEASE_NOTES: string[] = [
 
 const STORAGE_KEY = "lastSeenVersion";
 
+function subscribeToStorage(callback: () => void) {
+  if (typeof window === "undefined") return () => {};
+  window.addEventListener("storage", callback);
+  return () => window.removeEventListener("storage", callback);
+}
+
+function getLastSeen(): string | null {
+  if (typeof window === "undefined") return null;
+  return window.localStorage.getItem(STORAGE_KEY);
+}
+
+function getServerLastSeen(): string | null {
+  return null;
+}
+
 export function ReleaseNotesModal() {
-  const [isOpen, setIsOpen] = useState(false);
+  const lastSeen = useSyncExternalStore(subscribeToStorage, getLastSeen, getServerLastSeen);
+  const [dismissed, setDismissed] = useState(false);
   const [dontShowAgain, setDontShowAgain] = useState(false);
 
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const lastSeen = window.localStorage.getItem(STORAGE_KEY);
-    if (lastSeen !== CURRENT_APP_VERSION) {
-      setIsOpen(true);
-    }
-  }, []);
+  const isOpen = !dismissed && lastSeen !== CURRENT_APP_VERSION;
 
   const handleClose = () => {
     if (dontShowAgain && typeof window !== "undefined") {
       window.localStorage.setItem(STORAGE_KEY, CURRENT_APP_VERSION);
     }
-    setIsOpen(false);
+    setDismissed(true);
   };
 
   return (
