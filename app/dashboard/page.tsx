@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -23,14 +23,41 @@ import {
 } from "lucide-react";
 import type { Status } from "@/lib/types";
 
+export const dynamic = "force-dynamic";
+
 const ACTIVE: Status[] = ["APPLIED", "INTERVIEWING", "OFFERED"];
 
+function extractUrl(value: string | null): string | undefined {
+  if (!value) return undefined;
+  const trimmed = value.trim();
+  if (!trimmed) return undefined;
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  const match = trimmed.match(/https?:\/\/\S+/i);
+  return match ? match[0] : undefined;
+}
+
 export default function DashboardPage() {
+  return (
+    <Suspense fallback={null}>
+      <DashboardPageContent />
+    </Suspense>
+  );
+}
+
+function DashboardPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const token = useAuthStore((s) => s.token);
   const lang = useLangStore((s) => s.lang);
   const t = getDictionary(lang);
-  const [dialogOpen, setDialogOpen] = useState(false);
+
+  const [initialShared] = useState(() =>
+    extractUrl(searchParams.get("url")) ??
+    extractUrl(searchParams.get("text")) ??
+    extractUrl(searchParams.get("title"))
+  );
+  const [dialogOpen, setDialogOpen] = useState(!!initialShared);
+  const [sharedUrl, setSharedUrl] = useState<string | undefined>(initialShared);
 
   const jobs = useJobStore((s) => s.jobs);
   const isLoading = useJobStore((s) => s.isLoading);
@@ -49,13 +76,25 @@ export default function DashboardPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    if (initialShared) router.replace("/dashboard");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const total = jobs.length;
   const active = jobs.filter((j) => ACTIVE.includes(j.status)).length;
   const offers = jobs.filter((j) => j.status === "OFFERED").length;
 
   return (
     <>
-      <AddJobDialog open={dialogOpen} onOpenChange={setDialogOpen} />
+      <AddJobDialog
+        open={dialogOpen}
+        onOpenChange={(open) => {
+          setDialogOpen(open);
+          if (!open) setSharedUrl(undefined);
+        }}
+        initialScrapeUrl={sharedUrl}
+      />
 
       {error && (
         <div className="mb-4 flex items-center justify-between rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
@@ -66,7 +105,7 @@ export default function DashboardPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-3 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8">
         {[
           { label: t.dashboard.statsTotal,  value: total,  icon: LayoutDashboard  },
           { label: t.dashboard.statsActive, value: active, icon: BriefcaseBusiness },
@@ -97,9 +136,9 @@ export default function DashboardPage() {
         </div>
       ) : (
         <Tabs defaultValue="kanban">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
             <h1 className="text-xl font-bold text-foreground tracking-tight">{t.dashboard.title}</h1>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <TabsList>
                 <TabsTrigger value="kanban" className="gap-1.5 cursor-pointer">
                   <LayoutDashboard className="h-4 w-4" />

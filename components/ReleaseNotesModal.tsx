@@ -26,6 +26,16 @@ interface Release {
 
 const RELEASES: Release[] = [
   {
+    version: "v1.5.0",
+    date: "2026-05-28",
+    changes: [
+      {
+        type: "feat",
+        text: "Turned the app into an installable Mobile PWA! You can now 'Share' job links directly from your browser into the app.",
+      },
+    ],
+  },
+  {
     version: "v1.4.1",
     date: "2026-05-28",
     changes: [

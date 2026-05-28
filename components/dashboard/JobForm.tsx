@@ -112,9 +112,10 @@ interface JobFormProps {
   onSubmit: (data: NewJob) => Promise<void>;
   onCancel: () => void;
   submitLabel?: string;
+  initialScrapeUrl?: string;
 }
 
-export function JobForm({ initialData, onSubmit, onCancel, submitLabel = "Save" }: JobFormProps) {
+export function JobForm({ initialData, onSubmit, onCancel, submitLabel = "Save", initialScrapeUrl }: JobFormProps) {
   const form = useForm<JobFormValues>({
     resolver: zodResolver(jobFormSchema),
     defaultValues: {
@@ -149,7 +150,7 @@ export function JobForm({ initialData, onSubmit, onCancel, submitLabel = "Save" 
   const [parseError, setParseError] = useState<string | null>(null);
 
   // URL Scraper state
-  const [scrapeUrl, setScrapeUrl] = useState("");
+  const [scrapeUrl, setScrapeUrl] = useState(initialScrapeUrl ?? "");
   const [isScraping, setIsScraping] = useState(false);
   const [scrapeError, setScrapeError] = useState<string | null>(null);
 

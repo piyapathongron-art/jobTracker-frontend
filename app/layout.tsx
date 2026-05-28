@@ -14,6 +14,20 @@ export const metadata: Metadata = {
   title: "JobTracker — Your AI-Powered Job Hunt",
   description:
     "Track applications, tailor your resume, and prep for interviews — all in one place.",
+  manifest: "/manifest.json",
+  applicationName: "JobTracker",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "JobTracker",
+  },
+};
+
+export const viewport = {
+  themeColor: "#171717",
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover" as const,
 };
 
 export default function RootLayout({

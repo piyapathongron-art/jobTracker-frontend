@@ -13,9 +13,10 @@ import type { NewJob } from "@/store/useJobStore";
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  initialScrapeUrl?: string;
 }
 
-export function AddJobDialog({ open, onOpenChange }: Props) {
+export function AddJobDialog({ open, onOpenChange, initialScrapeUrl }: Props) {
   const addJob = useJobStore((s) => s.addJob);
 
   async function handleSubmit(data: NewJob) {
@@ -30,10 +31,11 @@ export function AddJobDialog({ open, onOpenChange }: Props) {
           <DialogTitle>Add New Job</DialogTitle>
         </DialogHeader>
         <div className="mt-2">
-          <JobForm 
-            onSubmit={handleSubmit} 
-            onCancel={() => onOpenChange(false)} 
+          <JobForm
+            onSubmit={handleSubmit}
+            onCancel={() => onOpenChange(false)}
             submitLabel="Add Job"
+            initialScrapeUrl={initialScrapeUrl}
           />
         </div>
       </DialogContent>

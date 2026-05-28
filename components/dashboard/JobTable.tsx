@@ -92,8 +92,8 @@ export function JobTable() {
         onOpenChange={setCompareJobsModalOpen}
       />
 
-      <div className="rounded-xl border border-border overflow-hidden relative">
-        <Table>
+      <div className="rounded-xl border border-border overflow-x-auto relative w-full">
+        <Table className="min-w-[720px]">
           <TableHeader>
             <TableRow className="bg-muted/50">
               <TableHead className="w-10"></TableHead>
@@ -164,7 +164,7 @@ export function JobTable() {
                       <Button
                         size="icon"
                         variant="ghost"
-                        className="h-7 w-7 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-primary transition-all"
+                        className="h-7 w-7 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 text-muted-foreground hover:text-primary transition-all"
                         onClick={() => handleRowClick(job)}
                       >
                         <Eye className="h-3.5 w-3.5" />
@@ -172,7 +172,7 @@ export function JobTable() {
                       <Button
                         size="icon"
                         variant="ghost"
-                        className="h-7 w-7 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-red-600 transition-all"
+                        className="h-7 w-7 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 text-muted-foreground hover:text-red-600 transition-all"
                         onClick={() => deleteJob(job.id)}
                       >
                         <Trash2 className="h-3.5 w-3.5" />
