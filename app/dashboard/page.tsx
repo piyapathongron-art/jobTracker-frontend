@@ -107,21 +107,42 @@ function DashboardPageContent() {
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8">
         {[
-          { label: t.dashboard.statsTotal,  value: total,  icon: LayoutDashboard  },
-          { label: t.dashboard.statsActive, value: active, icon: BriefcaseBusiness },
-          { label: t.dashboard.statsOffers, value: offers, icon: Trophy            },
-        ].map(({ label, value, icon: Icon }) => (
-          <Card key={label} className="border-border">
+          { 
+            label: t.dashboard.statsTotal,  
+            value: total,  
+            icon: LayoutDashboard,
+            colorClass: "text-white",
+            bgClass: "bg-blue-500",
+            borderClass: "border-blue-500 border-l-4 border-l-blue-500"
+          },
+          { 
+            label: t.dashboard.statsActive, 
+            value: active, 
+            icon: BriefcaseBusiness,
+            colorClass: "text-white",
+            bgClass: "bg-amber-500",
+            borderClass: "border-amber-500 border-l-4 border-l-amber-500"
+          },
+          { 
+            label: t.dashboard.statsOffers, 
+            value: offers, 
+            icon: Trophy,
+            colorClass: "text-white",
+            bgClass: "bg-emerald-500",
+            borderClass: "border-emerald-500 border-l-4 border-l-emerald-500"
+          },
+        ].map(({ label, value, icon: Icon, colorClass, bgClass, borderClass }) => (
+          <Card key={label} className={`border ${borderClass} shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5`}>
             <CardContent className="pt-4 pb-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">
+                  <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wider mb-1">
                     {label}
                   </p>
-                  <p className="text-3xl font-bold text-foreground mt-1">{value}</p>
+                  <p className="text-3xl font-black text-foreground">{value}</p>
                 </div>
-                <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <Icon className="h-5 w-5 text-primary" />
+                <div className={`h-12 w-12 rounded-xl ${bgClass} flex items-center justify-center shadow-inner`}>
+                  <Icon className={`h-6 w-6 ${colorClass}`} />
                 </div>
               </div>
             </CardContent>
