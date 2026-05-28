@@ -91,7 +91,7 @@ const RELEASES: Release[] = [
       { type: "feat", text: "Added What's New release notes modal." },
       { type: "feat", text: "Added Google OAuth integration." },
       {
-        type: "refactor",
+        type: "fix",
         text: "Refactored dashboard, dialogs, and forms for mobile responsiveness.",
       },
       {
@@ -102,7 +102,7 @@ const RELEASES: Release[] = [
   },
 ];
 
-const CURRENT_APP_VERSION = RELEASES[0]!.version;
+export const CURRENT_APP_VERSION = RELEASES[0]!.version;
 
 const STORAGE_KEY = "lastSeenVersion";
 

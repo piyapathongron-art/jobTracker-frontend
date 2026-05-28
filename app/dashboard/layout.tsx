@@ -9,6 +9,7 @@ import { useAuthStore } from "@/store/useAuthStore";
 import { useLangStore } from "@/store/useLangStore";
 import { useInsightsStore } from "@/store/useInsightsStore";
 import { getDictionary } from "@/locales";
+import { CURRENT_APP_VERSION } from "@/components/ReleaseNotesModal";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
@@ -50,26 +51,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <BriefcaseBusiness className="h-5 w-5 text-primary" />
             <span className="font-semibold text-foreground tracking-tight flex items-center gap-2">
               JobTracker
-              <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded font-black uppercase tracking-wider">v1.0</span>
             </span>
           </Link>
           <div className="flex items-center gap-3">
-            <Button
-              size="sm"
-              variant="ghost"
-              className="cursor-pointer gap-1.5 text-muted-foreground hover:text-foreground font-semibold"
-              onClick={toggleLang}
-              aria-label={t.nav.language}
-              title={t.nav.language}
-            >
-              <Languages className="h-4 w-4" />
-              <span className="text-xs">
-                <span className={lang === "en" ? "text-primary" : ""}>EN</span>
-                <span className="mx-1 opacity-40">|</span>
-                <span className={lang === "th" ? "text-primary" : ""}>TH</span>
-              </span>
-            </Button>
-
             {user && user.hasResume === false && (
               <Link href="/dashboard/profile" className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 text-amber-700 rounded-full text-xs font-semibold border border-amber-200 animate-pulse hover:bg-amber-100 transition-colors" title="Upload your master resume in Profile to unlock AI features">
                 <AlertCircle className="h-3.5 w-3.5" />
@@ -103,10 +87,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
+                <DropdownMenuItem className="cursor-pointer flex items-center justify-between" onClick={toggleLang}>
+                  <div className="flex items-center">
+                    <Languages className="mr-2 h-4 w-4" />
+                    <span>{t.nav.language}</span>
+                  </div>
+                  <span className="text-xs text-muted-foreground font-semibold uppercase">{lang}</span>
+                </DropdownMenuItem>
                 <DropdownMenuItem className="cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50" onClick={handleSignOut}>
                   <LogOut className="mr-2 h-4 w-4" />
                   <span>{t.nav.logout}</span>
                 </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <div className="p-2 text-center">
+                  <span className="text-[10px] text-muted-foreground">Version {CURRENT_APP_VERSION}</span>
+                </div>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
