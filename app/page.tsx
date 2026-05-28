@@ -3,103 +3,93 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuthStore } from "@/store/useAuthStore";
+import { useLangStore } from "@/store/useLangStore";
+import { getDictionary } from "@/locales";
 import {
   BriefcaseBusiness,
-  FileSearch,
-  FilePen,
-  MessageSquareText,
-  Mail,
   LayoutDashboard,
   Sparkles,
   ArrowRight,
-  CircleDot,
+  Globe,
+  FileSearch,
+  Crosshair,
+  MessageSquareText,
+  Scale
 } from "lucide-react";
 
-const statusStages = [
-  { label: "Wishlist",     color: "bg-slate-100 text-slate-700 border-slate-200"   },
-  { label: "Applied",      color: "bg-blue-50 text-blue-700 border-blue-200"       },
-  { label: "Interviewing", color: "bg-violet-50 text-violet-700 border-violet-200" },
-  { label: "Offered",      color: "bg-emerald-50 text-emerald-700 border-emerald-200" },
-  { label: "Rejected",     color: "bg-red-50 text-red-700 border-red-200"          },
-  { label: "Ghosted",      color: "bg-orange-50 text-orange-700 border-orange-200" },
-];
-
-const aiFeatures = [
-  {
-    icon: FileSearch,
-    title: "JD Parser",
-    description:
-      "Paste any job description and extract company, role, tech stack, and salary range in seconds.",
-  },
-  {
-    icon: FilePen,
-    title: "Resume Tailor",
-    description:
-      "Get keyword gap analysis and a personalized cover letter draft matched to each role.",
-  },
-  {
-    icon: MessageSquareText,
-    title: "Interview Sim",
-    description:
-      "Practice with AI-generated STAR-format technical and behavioral questions for your specific role.",
-  },
-  {
-    icon: Mail,
-    title: "Email Drafter",
-    description:
-      "Draft polished follow-up, thank-you, or offer-decline emails with one click.",
-  },
-];
-
 export default function Home() {
-  // Hydration guard: avoid SSR mismatch when reading persisted auth state
   const user = useAuthStore((s) => s.user);
+  const lang = useLangStore((s) => s.lang);
+  const setLang = useLangStore((s) => s.setLang);
+  const t = getDictionary(lang);
+  
   const [isMounted, setIsMounted] = useState(false);
   useEffect(() => {
-    let mounted = true;
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (mounted) setIsMounted(true);
-    return () => { mounted = false; };
+    setIsMounted(true);
   }, []);
 
   const isLoggedIn = isMounted && !!user;
 
+  const toggleLanguage = () => {
+    setLang(lang === "en" ? "th" : "en");
+  };
+
+  const features = [
+    {
+      icon: FileSearch,
+      title: t.landing.feat1Title,
+      description: t.landing.feat1Desc,
+    },
+    {
+      icon: Crosshair,
+      title: t.landing.feat2Title,
+      description: t.landing.feat2Desc,
+    },
+    {
+      icon: MessageSquareText,
+      title: t.landing.feat3Title,
+      description: t.landing.feat3Desc,
+    },
+    {
+      icon: Scale,
+      title: t.landing.feat4Title,
+      description: t.landing.feat4Desc,
+    },
+  ];
+
   return (
-    <div className="flex flex-col min-h-full">
+    <div className="flex flex-col min-h-full font-sans bg-[#F0F9FF]">
       {/* ─── Navbar ─── */}
-      <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-sm border-b border-border">
+      <header className="sticky top-0 z-50 bg-[#F0F9FF]/80 backdrop-blur-md border-b border-[#0EA5E9]/10">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <BriefcaseBusiness className="h-5 w-5 text-primary" aria-hidden="true" />
-            <span className="font-semibold text-foreground tracking-tight">
+            <div className="bg-[#0EA5E9] p-1.5 rounded-lg shadow-sm">
+              <BriefcaseBusiness className="h-5 w-5 text-white" aria-hidden="true" />
+            </div>
+            <span className="font-bold text-[#0C4A6E] tracking-tight text-xl">
               JobTracker
             </span>
           </div>
-          <nav className="hidden md:flex items-center gap-6 text-sm text-muted-foreground">
-            <a href="#features" className="cursor-pointer hover:text-foreground transition-colors duration-200">
-              Features
-            </a>
-            <a href="#pipeline" className="cursor-pointer hover:text-foreground transition-colors duration-200">
-              Pipeline
-            </a>
-          </nav>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-4">
+            <Button variant="ghost" size="sm" onClick={toggleLanguage} className="text-[#0C4A6E] hover:bg-[#0EA5E9]/10 font-bold">
+              <Globe className="h-4 w-4 mr-1.5" />
+              {lang === "en" ? "TH" : "EN"}
+            </Button>
             {isLoggedIn ? (
-              <Button asChild size="sm" className="cursor-pointer gap-1.5">
+              <Button asChild size="sm" className="bg-[#0EA5E9] hover:bg-[#0EA5E9]/90 text-white font-semibold">
                 <Link href="/dashboard">
-                  <LayoutDashboard className="h-4 w-4" />
-                  Hi, {user.name || "User"}
+                  <LayoutDashboard className="h-4 w-4 sm:mr-1.5" />
+                  <span className="hidden sm:inline">Dashboard</span>
                 </Link>
               </Button>
             ) : (
               <>
-                <Button asChild variant="ghost" size="sm" className="cursor-pointer">
-                  <Link href="/login">Sign in</Link>
+                <Button asChild variant="ghost" size="sm" className="text-[#0C4A6E] hover:bg-[#0EA5E9]/10 hidden sm:flex font-bold">
+                  <Link href="/login">{t.landing.login}</Link>
                 </Button>
-                <Button asChild size="sm" className="cursor-pointer">
-                  <Link href="/register">Get started</Link>
+                <Button asChild size="sm" className="bg-[#F97316] hover:bg-[#ea580c] text-white font-bold shadow-md hover:shadow-lg transition-all">
+                  <Link href="/register">{t.landing.getStarted}</Link>
                 </Button>
               </>
             )}
@@ -108,143 +98,125 @@ export default function Home() {
       </header>
 
       <main className="flex-1">
-        {/* ─── Hero ─── */}
-        <section className="max-w-6xl mx-auto px-4 sm:px-6 pt-20 pb-16 text-center">
-          <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 border border-primary/20 px-4 py-1.5 text-xs font-medium text-primary mb-8">
-            <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
-            AI-powered by Gemini
+        {/* ─── Section 1: Hero (The Hook) ─── */}
+        <section className="max-w-5xl mx-auto px-4 sm:px-6 pt-24 pb-20 text-center animate-in fade-in slide-in-from-bottom-8 duration-700">
+          <div className="inline-flex items-center gap-2 rounded-full bg-[#0EA5E9]/10 border border-[#0EA5E9]/20 px-4 py-1.5 text-xs font-bold text-[#0EA5E9] mb-8 shadow-sm">
+            <Sparkles className="h-3.5 w-3.5" />
+            AI-Powered by Gemini
           </div>
 
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground tracking-tight max-w-3xl mx-auto">
-            Your job search,{" "}
-            <span className="text-primary">finally organized</span>
+          <h1 className="text-5xl sm:text-6xl lg:text-7xl font-black text-[#0C4A6E] tracking-tight leading-[1.1] mb-6">
+            {t.landing.heroTitle.split(". ")[0]}.<br className="hidden sm:block"/>{" "}
+            <span className="text-[#0EA5E9]">{t.landing.heroTitle.split(". ")[1]}</span>
           </h1>
 
-          <p className="mt-6 text-lg text-muted-foreground max-w-xl mx-auto leading-relaxed">
-            Track every application, tailor your resume with AI, and walk into
-            every interview fully prepared — all from one clean dashboard.
+          <p className="text-lg sm:text-xl text-[#0C4A6E]/70 max-w-2xl mx-auto leading-relaxed font-medium mb-10">
+            {t.landing.heroSub}
           </p>
 
-          <div className="mt-10 flex flex-col sm:flex-row gap-3 justify-center">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             {isLoggedIn ? (
-              <Button asChild size="lg" className="cursor-pointer gap-2 text-base px-8">
+              <Button asChild size="lg" className="bg-[#F97316] hover:bg-[#ea580c] text-white font-bold px-8 h-14 rounded-xl shadow-lg hover:-translate-y-1 transition-all">
                 <Link href="/dashboard">
-                  <LayoutDashboard className="h-4 w-4" aria-hidden="true" />
+                  <LayoutDashboard className="h-5 w-5 mr-2" />
                   Go to Dashboard
                 </Link>
               </Button>
             ) : (
-              <>
-                <Button asChild size="lg" className="cursor-pointer gap-2 text-base px-8">
-                  <Link href="/register">
-                    Start tracking
-                    <ArrowRight className="h-4 w-4" aria-hidden="true" />
-                  </Link>
-                </Button>
-                <Button asChild variant="outline" size="lg" className="cursor-pointer text-base px-8">
-                  <Link href="/login">
-                    <LayoutDashboard className="h-4 w-4 mr-2" aria-hidden="true" />
-                    View dashboard
-                  </Link>
-                </Button>
-              </>
+              <Button asChild size="lg" className="bg-[#F97316] hover:bg-[#ea580c] text-white font-bold px-8 h-14 rounded-xl shadow-[0_8px_30px_rgb(249,115,22,0.3)] hover:-translate-y-1 transition-all text-lg">
+                <Link href="/register">
+                  {t.landing.getStarted}
+                  <ArrowRight className="h-5 w-5 ml-2" />
+                </Link>
+              </Button>
             )}
-          </div>
-
-          {/* Pipeline preview */}
-          <div
-            id="pipeline"
-            className="mt-16 flex flex-wrap justify-center gap-2"
-            aria-label="Application pipeline stages"
-          >
-            {statusStages.map((stage) => (
-              <span
-                key={stage.label}
-                className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1 text-xs font-medium ${stage.color}`}
-              >
-                <CircleDot className="h-3 w-3" aria-hidden="true" />
-                {stage.label}
-              </span>
-            ))}
           </div>
         </section>
 
-        {/* ─── AI Features ─── */}
-        <section id="features" className="max-w-6xl mx-auto px-4 sm:px-6 py-16">
-          <div className="text-center mb-12">
-            <h2 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">
-              AI does the heavy lifting
-            </h2>
-            <p className="mt-3 text-muted-foreground max-w-md mx-auto">
-              Four tools that turn your raw job hunt into a focused, strategic
-              campaign.
-            </p>
+        {/* ─── Section 2: Problem vs Solution ─── */}
+        <section className="bg-white border-y border-[#0EA5E9]/10 py-20 relative overflow-hidden">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 relative z-10">
+            <div className="grid md:grid-cols-2 gap-12 items-center">
+              <div className="bg-[#F0F9FF] p-8 rounded-3xl border border-[#0EA5E9]/20 shadow-sm">
+                <div className="h-12 w-12 bg-red-100 rounded-2xl flex items-center justify-center mb-6">
+                  <span className="text-2xl">😫</span>
+                </div>
+                <h3 className="text-2xl font-black text-[#0C4A6E] mb-3">{t.landing.probTitle}</h3>
+                <p className="text-[#0C4A6E]/70 font-medium leading-relaxed">{t.landing.probDesc}</p>
+              </div>
+              <div className="bg-[#0EA5E9] p-8 rounded-3xl border border-[#0EA5E9] shadow-[0_20px_50px_rgb(14,165,233,0.3)] text-white transform md:-translate-y-6 transition-transform hover:-translate-y-8 duration-500">
+                <div className="h-12 w-12 bg-white/20 rounded-2xl flex items-center justify-center mb-6 backdrop-blur-md">
+                  <Sparkles className="h-6 w-6 text-white" />
+                </div>
+                <h3 className="text-2xl font-black text-white mb-3">{t.landing.solTitle}</h3>
+                <p className="text-white/90 font-medium leading-relaxed">{t.landing.solDesc}</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ─── Section 3: Feature Highlights ─── */}
+        <section className="py-24 max-w-6xl mx-auto px-4 sm:px-6">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl sm:text-4xl font-black text-[#0C4A6E] mb-4">AI does the heavy lifting</h2>
+            <p className="text-lg text-[#0C4A6E]/70 font-medium max-w-xl mx-auto">Four tools that turn your raw job hunt into a focused, strategic campaign.</p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {aiFeatures.map((feature) => {
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
+            {features.map((feature, i) => {
               const Icon = feature.icon;
               return (
-                <Card
-                  key={feature.title}
-                  className="cursor-pointer group border-border hover:border-primary/40 hover:shadow-md transition-all duration-200"
-                >
-                  <CardHeader className="pb-3">
-                    <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center mb-3 group-hover:bg-primary/15 transition-colors duration-200">
-                      <Icon className="h-5 w-5 text-primary" aria-hidden="true" />
-                    </div>
-                    <CardTitle className="text-base font-semibold text-foreground">
-                      {feature.title}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-muted-foreground leading-relaxed">
-                      {feature.description}
-                    </p>
-                  </CardContent>
-                </Card>
+                <div key={i} className="bg-white p-8 rounded-3xl border border-[#0EA5E9]/10 shadow-sm hover:shadow-xl hover:border-[#0EA5E9]/30 transition-all duration-300 group flex flex-col sm:flex-row gap-6 items-start">
+                  <div className="h-14 w-14 shrink-0 rounded-2xl bg-[#F0F9FF] border border-[#0EA5E9]/20 flex items-center justify-center group-hover:scale-110 group-hover:-rotate-3 transition-transform duration-300 shadow-inner">
+                    <Icon className="h-7 w-7 text-[#0EA5E9]" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-[#0C4A6E] mb-2">{feature.title}</h3>
+                    <p className="text-[#0C4A6E]/70 font-medium leading-relaxed">{feature.description}</p>
+                  </div>
+                </div>
               );
             })}
           </div>
         </section>
 
-        {/* ─── CTA ─── */}
-        <section className="max-w-6xl mx-auto px-4 sm:px-6 py-16">
-          <div className="rounded-2xl bg-primary px-8 py-12 text-center">
-            <h2 className="text-2xl sm:text-3xl font-bold text-primary-foreground tracking-tight">
-              Ready to take control?
-            </h2>
-            <p className="mt-3 text-primary-foreground/80 max-w-sm mx-auto">
-              Stop losing track of applications in spreadsheets. Start your
-              tracker in under a minute.
-            </p>
-            {isLoggedIn ? (
-              <Button asChild size="lg" variant="secondary" className="mt-8 cursor-pointer gap-2 text-base px-8">
-                <Link href="/dashboard">
-                  <LayoutDashboard className="h-4 w-4" aria-hidden="true" />
-                  Go to Dashboard
-                </Link>
-              </Button>
-            ) : (
-              <Button asChild size="lg" variant="secondary" className="mt-8 cursor-pointer gap-2 text-base px-8">
-                <Link href="/register">
-                  Add your first job
-                  <ArrowRight className="h-4 w-4" aria-hidden="true" />
-                </Link>
-              </Button>
-            )}
+        {/* ─── Section 4: Climax CTA ─── */}
+        <section className="max-w-5xl mx-auto px-4 sm:px-6 pb-24 pt-10">
+          <div className="bg-gradient-to-br from-[#0C4A6E] to-[#0369A1] rounded-[2.5rem] p-10 sm:p-16 text-center shadow-2xl relative overflow-hidden group">
+            <div className="absolute top-0 right-0 p-12 opacity-5 group-hover:scale-110 group-hover:rotate-12 transition-transform duration-700">
+              <BriefcaseBusiness className="w-64 h-64 text-white" />
+            </div>
+            <div className="relative z-10">
+              <h2 className="text-4xl sm:text-5xl font-black text-white mb-6 tracking-tight">
+                {t.landing.climaxTitle}
+              </h2>
+              <p className="text-lg sm:text-xl text-white/80 font-medium max-w-2xl mx-auto mb-10">
+                {t.landing.climaxSub}
+              </p>
+              {isLoggedIn ? (
+                <Button asChild size="lg" className="bg-[#F97316] hover:bg-[#ea580c] text-white font-bold px-10 h-16 rounded-2xl text-lg shadow-[0_8px_30px_rgb(249,115,22,0.4)] hover:-translate-y-1 transition-all">
+                  <Link href="/dashboard">Go to Dashboard</Link>
+                </Button>
+              ) : (
+                <Button asChild size="lg" className="bg-[#F97316] hover:bg-[#ea580c] text-white font-bold px-10 h-16 rounded-2xl text-lg shadow-[0_8px_30px_rgb(249,115,22,0.4)] hover:-translate-y-1 transition-all">
+                  <Link href="/register">{t.landing.getStarted} <ArrowRight className="ml-2 h-5 w-5" /></Link>
+                </Button>
+              )}
+            </div>
           </div>
         </section>
       </main>
 
       {/* ─── Footer ─── */}
-      <footer className="border-t border-border py-8">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
+      <footer className="bg-white border-t border-[#0EA5E9]/10 py-8">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 flex flex-col md:flex-row items-center justify-between gap-4 text-sm font-medium text-[#0C4A6E]/60">
           <div className="flex items-center gap-2">
-            <BriefcaseBusiness className="h-4 w-4 text-primary" aria-hidden="true" />
-            <span className="font-medium text-foreground">JobTracker</span>
+            <div className="bg-[#0EA5E9] p-1.5 rounded-md">
+              <BriefcaseBusiness className="h-4 w-4 text-white" />
+            </div>
+            <span className="font-bold text-[#0C4A6E]">JobTracker</span>
           </div>
-          <p>Personal AI Job Tracker — built with Next.js &amp; Gemini</p>
+          <p>Personal AI Job Tracker — built with Next.js & Gemini</p>
         </div>
       </footer>
     </div>

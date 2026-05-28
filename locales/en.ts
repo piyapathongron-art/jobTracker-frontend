@@ -40,6 +40,26 @@ export const en = {
     english: "English",
     thai: "ภาษาไทย",
   },
+  landing: {
+    heroTitle: "Stop Tracking. Start Landing Offers.",
+    heroSub: "Upgrade your job hunt with a Personal AI Career Assistant. Auto-fill data, score resumes, and practice interviews all in one place.",
+    getStarted: "Get Started for Free",
+    login: "Log in",
+    probTitle: "The Problem",
+    probDesc: "Endless Excel sheets, guessing if your resume is good enough, and anxiety before interviews.",
+    solTitle: "The Solution",
+    solDesc: "A beautiful Kanban board combined with 24/7 AI assistants working to get you hired.",
+    feat1Title: "Magic Data Entry",
+    feat1Desc: "Paste a job link and let our AI parser extract everything instantly.",
+    feat2Title: "AI Headhunter",
+    feat2Desc: "Get a 0-100% match score and let AI optimize your resume to beat the ATS.",
+    feat3Title: "STAR Simulator",
+    feat3Desc: "Practice tailored interview questions in English and Thai.",
+    feat4Title: "Decision Maker",
+    feat4Desc: "Compare offers side-by-side with AI commute estimation and pros/cons.",
+    climaxTitle: "Ready to level up your career?",
+    climaxSub: "Join now and turn your job hunt into a clear path to success.",
+  }
 };
 
 export type Dictionary = typeof en;
