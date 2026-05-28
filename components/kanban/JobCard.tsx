@@ -3,7 +3,8 @@
 import { Draggable } from "@hello-pangea/dnd";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import type { JobApplication } from "@/lib/types";
-import { MapPin, Calendar, Wallet } from "lucide-react";
+import { MapPin, Calendar, Wallet, Flame } from "lucide-react";
+import { useInsightsStore } from "@/store/useInsightsStore";
 
 function formatSalary(min?: number | null, max?: number | null, currency?: string, period?: string) {
   if (!min && !max) return null;
@@ -28,6 +29,7 @@ export function JobCard({ job, index, onClick }: Props) {
   const applied = job.appliedAt
     ? new Date(job.appliedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })
     : null;
+  const isTrending = useInsightsStore((s) => s.isTrending(job.company));
 
   return (
     <Draggable draggableId={job.id} index={index}>
@@ -45,7 +47,15 @@ export function JobCard({ job, index, onClick }: Props) {
           >
             <CardHeader className="pb-2 pt-4 px-4">
               <p className="font-semibold text-sm leading-tight truncate">{job.role}</p>
-              <p className="text-muted-foreground text-xs mt-0.5 truncate">{job.company}</p>
+              <p className="text-muted-foreground text-xs mt-0.5 truncate flex items-center gap-1">
+                <span className="truncate">{job.company}</span>
+                {isTrending && (
+                  <Flame
+                    className="h-3 w-3 shrink-0 text-orange-500 fill-orange-200"
+                    aria-label="Highly competitive"
+                  />
+                )}
+              </p>
             </CardHeader>
             <CardContent className="px-4 pb-4 space-y-1.5">
               {job.location && (

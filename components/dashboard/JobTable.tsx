@@ -13,10 +13,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useJobStore } from "@/store/useJobStore";
+import { useInsightsStore } from "@/store/useInsightsStore";
 import { JobDetailsSheet } from "./JobDetailsSheet";
 import { CompareJobsModal } from "./CompareJobsModal";
 import type { Status, JobApplication } from "@/lib/types";
-import { Trash2, Eye, Sparkles, X } from "lucide-react";
+import { Trash2, Eye, Sparkles, X, Flame } from "lucide-react";
 
 const STATUS_LABEL: Record<Status, string> = {
   WISHLIST:     "Wishlist",
@@ -55,6 +56,7 @@ function salary(min: number | null, max: number | null, currency: string, period
 export function JobTable() {
   const jobs = useJobStore((s) => s.jobs);
   const deleteJob = useJobStore((s) => s.deleteJob);
+  const isTrending = useInsightsStore((s) => s.isTrending);
 
   const [selectedJob, setSelectedJob] = useState<JobApplication | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -127,7 +129,17 @@ export function JobTable() {
                       disabled={!selectedIds.includes(job.id) && selectedIds.length >= 3}
                     />
                   </TableCell>
-                  <TableCell className="font-medium text-foreground">{job.company}</TableCell>
+                  <TableCell className="font-medium text-foreground">
+                    <span className="inline-flex items-center gap-1.5">
+                      {job.company}
+                      {isTrending(job.company) && (
+                        <Flame
+                          className="h-3.5 w-3.5 text-orange-500 fill-orange-200"
+                          aria-label="Highly competitive"
+                        />
+                      )}
+                    </span>
+                  </TableCell>
                   <TableCell className="text-muted-foreground">{job.role}</TableCell>
                   <TableCell>
                     <Badge variant="outline" className={STATUS_VARIANT[job.status]}>

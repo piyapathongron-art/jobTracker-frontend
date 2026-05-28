@@ -25,9 +25,11 @@ import type { JobApplication } from "@/lib/types";
 import type { NewJob } from "@/store/useJobStore";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
-import { Loader2, Sparkles, Link as LinkIcon, FileText } from "lucide-react";
+import { Loader2, Sparkles, Link as LinkIcon, FileText, Flame } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { api } from "@/lib/axios";
 import { useState } from "react";
+import { useInsightsStore } from "@/store/useInsightsStore";
 
 const STATUS_OPTIONS = [
   { value: "WISHLIST",     label: "Wishlist",     dot: "bg-slate-400"  },
@@ -136,6 +138,10 @@ export function JobForm({ initialData, onSubmit, onCancel, submitLabel = "Save" 
   });
 
   const [submitError, setSubmitError] = useState<string | null>(null);
+
+  const isTrending = useInsightsStore((s) => s.isTrending);
+  const watchedCompany = form.watch("company");
+  const companyIsTrending = isTrending(watchedCompany);
 
   // AI Parser state
   const [jdText, setJdText] = useState("");
@@ -352,7 +358,21 @@ export function JobForm({ initialData, onSubmit, onCancel, submitLabel = "Save" 
             name="company"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Company *</FormLabel>
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <FormLabel>Company *</FormLabel>
+                  {companyIsTrending && (
+                    <Badge
+                      variant="outline"
+                      className="gap-1 border-orange-300 bg-orange-50 text-orange-700 px-2 py-0.5"
+                      title="3+ other users have applied here recently"
+                    >
+                      <Flame className="h-3 w-3" />
+                      <span className="text-[10px] font-bold uppercase tracking-wide">
+                        Highly Competitive
+                      </span>
+                    </Badge>
+                  )}
+                </div>
                 <FormControl>
                   <Input placeholder="e.g. Stripe" {...field} disabled={isSubmitting} />
                 </FormControl>

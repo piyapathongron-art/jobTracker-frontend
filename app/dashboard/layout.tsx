@@ -1,11 +1,13 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { BriefcaseBusiness, LogOut, Settings, Languages, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useLangStore } from "@/store/useLangStore";
+import { useInsightsStore } from "@/store/useInsightsStore";
 import { getDictionary } from "@/locales";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -24,7 +26,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const clearAuth = useAuthStore((s) => s.clearAuth);
   const lang = useLangStore((s) => s.lang);
   const setLang = useLangStore((s) => s.setLang);
+  const fetchTrending = useInsightsStore((s) => s.fetchTrending);
   const t = getDictionary(lang);
+
+  useEffect(() => {
+    fetchTrending();
+  }, [fetchTrending]);
 
   function handleSignOut() {
     clearAuth();
