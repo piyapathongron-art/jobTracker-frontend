@@ -15,9 +15,10 @@ import { Button } from "@/components/ui/button";
 // IMPORTANT: Bump CURRENT_APP_VERSION and append a new entry to RELEASE_NOTES
 // every time a new feature or hotfix ships. Other agents MUST update both
 // constants below so users see the "What's New" modal once per release.
-const CURRENT_APP_VERSION = "v1.4.0";
+const CURRENT_APP_VERSION = "v1.4.1";
 
 const RELEASE_NOTES: string[] = [
+  "🌱 Added automated Database Seeding to quickly populate Dev and Staging environments with rich test data.",
   "🔥 Added Community Insights! See which companies are trending and highly competitive across the platform.",
   "✨ Added Weekly Auto-Resetting Quotas for AI Tokens and Smart Scraper to keep your usage healthy",
   "🐛 Fixed UI bug where Firecrawl scraper wasn't showing up on the real Dashboard",
