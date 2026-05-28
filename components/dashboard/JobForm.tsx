@@ -23,7 +23,9 @@ import {
 } from "@/components/ui/select";
 import type { JobApplication } from "@/lib/types";
 import type { NewJob } from "@/store/useJobStore";
-import { Loader2, Sparkles } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Label } from "@/components/ui/label";
+import { Loader2, Sparkles, Link as LinkIcon, FileText } from "lucide-react";
 import { api } from "@/lib/axios";
 import { useState } from "react";
 
@@ -140,27 +142,71 @@ export function JobForm({ initialData, onSubmit, onCancel, submitLabel = "Save" 
   const [isParsing, setIsParsing] = useState(false);
   const [parseError, setParseError] = useState<string | null>(null);
 
+  // URL Scraper state
+  const [scrapeUrl, setScrapeUrl] = useState("");
+  const [isScraping, setIsScraping] = useState(false);
+  const [scrapeError, setScrapeError] = useState<string | null>(null);
+
+  type ParsedJD = {
+    company?: string;
+    role?: string;
+    location?: string;
+    workMode?: "ONSITE" | "HYBRID" | "REMOTE";
+    salaryMin?: number | string | null;
+    salaryMax?: number | string | null;
+    jobDescription?: string;
+    notes?: string;
+    source?: string;
+    url?: string;
+  };
+
+  function applyParsedToForm(data: ParsedJD, urlOverride?: string) {
+    if (data.company)        form.setValue("company",  data.company,  { shouldValidate: true });
+    if (data.role)           form.setValue("role",      data.role,     { shouldValidate: true });
+    if (data.location)       form.setValue("location",  data.location, { shouldValidate: true });
+    if (data.workMode)       form.setValue("workMode",  data.workMode, { shouldValidate: true });
+    if (data.salaryMin != null) form.setValue("salaryMin", String(data.salaryMin), { shouldValidate: true });
+    if (data.salaryMax != null) form.setValue("salaryMax", String(data.salaryMax), { shouldValidate: true });
+    if (data.jobDescription) form.setValue("jobDescription", data.jobDescription, { shouldValidate: true });
+    if (data.notes)          form.setValue("notes",     data.notes,    { shouldValidate: true });
+
+    const finalUrl = data.url ?? urlOverride;
+    if (finalUrl) form.setValue("url", finalUrl, { shouldValidate: true });
+
+    if (data.source) {
+      const finalSource = (SOURCE_OPTIONS as readonly string[]).includes(data.source) ? data.source : "Other";
+      form.setValue("source", finalSource, { shouldValidate: true });
+    }
+  }
+
   async function handleAIParse() {
     if (!jdText.trim()) return;
     setIsParsing(true);
     setParseError(null);
     try {
-      const res = await api.post("/api/ai/parse-jd", { text: jdText });
-      const data = res.data;
-      if (data.company)        form.setValue("company",  data.company,  { shouldValidate: true });
-      if (data.role)           form.setValue("role",      data.role,     { shouldValidate: true });
-      if (data.location)       form.setValue("location",  data.location, { shouldValidate: true });
-      if (data.workMode)       form.setValue("workMode",  data.workMode, { shouldValidate: true });
-      if (data.salaryMin)      form.setValue("salaryMin", data.salaryMin.toString(), { shouldValidate: true });
-      if (data.salaryMax)      form.setValue("salaryMax", data.salaryMax.toString(), { shouldValidate: true });
-      if (data.jobDescription) form.setValue("jobDescription", data.jobDescription, { shouldValidate: true });
-      if (data.notes)          form.setValue("notes",     data.notes,    { shouldValidate: true });
-      if (data.source)         form.setValue("source",    data.source,   { shouldValidate: true });
+      const res = await api.post<ParsedJD>("/api/ai/parse-jd", { text: jdText });
+      applyParsedToForm(res.data);
     } catch (error) {
       const err = error as { response?: { data?: { error?: string } } };
       setParseError(err.response?.data?.error || "AI parsing failed.");
     } finally {
       setIsParsing(false);
+    }
+  }
+
+  async function handleScrapeUrl() {
+    const url = scrapeUrl.trim();
+    if (!url) return;
+    setIsScraping(true);
+    setScrapeError(null);
+    try {
+      const res = await api.post<ParsedJD>("/api/ai/scrape-url", { url });
+      applyParsedToForm(res.data, url);
+    } catch (error) {
+      const err = error as { response?: { data?: { error?: string } } };
+      setScrapeError(err.response?.data?.error || "AI scrape failed.");
+    } finally {
+      setIsScraping(false);
     }
   }
 
@@ -202,41 +248,100 @@ export function JobForm({ initialData, onSubmit, onCancel, submitLabel = "Save" 
 
         {/* ── AI Auto-Fill (add mode only) ── */}
         {!initialData && (
-          <div className="space-y-1.5 p-3 bg-muted/50 rounded-lg border border-dashed border-border mb-4">
-            <p className="text-xs font-semibold flex items-center gap-1.5 text-primary">
-              <Sparkles className="h-3 w-3" />
-              AI Auto-Fill
+          <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 sm:p-4 space-y-3 mb-4">
+            <p className="text-xs font-semibold text-primary uppercase tracking-wide flex items-center gap-1.5">
+              <Sparkles className="h-3.5 w-3.5" />
+              AI Auto-fill
             </p>
-            <Textarea
-              placeholder="Paste Job Description here..."
-              className="text-xs min-h-[80px] bg-background"
-              value={jdText}
-              onChange={(e) => setJdText(e.target.value)}
-              disabled={isParsing || isSubmitting}
-            />
-            {parseError && (
-              <p className="text-xs text-red-600">{parseError}</p>
-            )}
-            <Button
-              type="button"
-              size="sm"
-              variant="secondary"
-              className="w-full mt-2 h-8 text-xs gap-1.5"
-              onClick={handleAIParse}
-              disabled={isParsing || !jdText.trim() || isSubmitting}
-            >
-              {isParsing ? (
-                <>
-                  <Loader2 className="h-3 w-3 animate-spin" />
-                  Analyzing JD...
-                </>
-              ) : (
-                <>
-                  <Sparkles className="h-3 w-3" />
-                  Parse with Gemini
-                </>
-              )}
-            </Button>
+
+            <Tabs defaultValue="url" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="url" className="gap-1.5 cursor-pointer">
+                  <LinkIcon className="h-3.5 w-3.5" />
+                  Scrape URL
+                </TabsTrigger>
+                <TabsTrigger value="paste" className="gap-1.5 cursor-pointer">
+                  <FileText className="h-3.5 w-3.5" />
+                  Paste JD
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="url" className="space-y-2 mt-3">
+                <Label htmlFor="scrape-url" className="text-xs text-muted-foreground">
+                  Paste a job posting URL — we&apos;ll fetch and parse it
+                </Label>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <div className="relative flex-1">
+                    <LinkIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                    <Input
+                      id="scrape-url"
+                      type="url"
+                      placeholder="https://linkedin.com/jobs/view/..."
+                      className="pl-8 text-sm bg-background"
+                      value={scrapeUrl}
+                      onChange={(e) => setScrapeUrl(e.target.value)}
+                      disabled={isScraping || isParsing || isSubmitting}
+                    />
+                  </div>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="secondary"
+                    className="cursor-pointer gap-1.5 w-full sm:w-auto min-h-[40px]"
+                    onClick={handleScrapeUrl}
+                    disabled={isScraping || isParsing || isSubmitting || !scrapeUrl.trim()}
+                  >
+                    {isScraping ? (
+                      <>
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        Scraping…
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="h-3.5 w-3.5" />
+                        Scrape & Auto-fill
+                      </>
+                    )}
+                  </Button>
+                </div>
+                {scrapeError && <p className="text-xs text-destructive">{scrapeError}</p>}
+              </TabsContent>
+
+              <TabsContent value="paste" className="space-y-2 mt-3">
+                <Label htmlFor="jd-text" className="text-xs text-muted-foreground">
+                  Paste the full job description text
+                </Label>
+                <Textarea
+                  id="jd-text"
+                  placeholder="Paste the job description here…"
+                  className="min-h-[110px] text-sm resize-none bg-background"
+                  value={jdText}
+                  onChange={(e) => setJdText(e.target.value)}
+                  disabled={isParsing || isScraping || isSubmitting}
+                />
+                {parseError && <p className="text-xs text-destructive">{parseError}</p>}
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  className="cursor-pointer gap-1.5 w-full min-h-[40px]"
+                  onClick={handleAIParse}
+                  disabled={isParsing || isScraping || isSubmitting || !jdText.trim()}
+                >
+                  {isParsing ? (
+                    <>
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      Parsing…
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="h-3.5 w-3.5" />
+                      Auto-fill with AI
+                    </>
+                  )}
+                </Button>
+              </TabsContent>
+            </Tabs>
           </div>
         )}
 
