@@ -16,6 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { api } from "@/lib/axios";
 import { useAuthStore } from "@/store/useAuthStore";
+import { LineConnectCard } from "@/components/LineConnectCard";
 import {
   Loader2,
   Save,
@@ -44,7 +45,7 @@ interface QuotaState {
   nextQuotaReset: string;
 }
 
-const LINE_BOT_HANDLE = process.env.NEXT_PUBLIC_LINE_BOT_HANDLE ?? "@your-jobtracker-bot";
+const LINE_BOT_HANDLE = process.env.NEXT_PUBLIC_LINE_BOT_HANDLE ?? "@745mozkj";
 
 export default function ProfilePage() {
   const token = useAuthStore((s) => s.token);
@@ -419,13 +420,9 @@ export default function ProfilePage() {
                           {linkCode}
                         </p>
                       </div>
-                      <p className="text-xs text-muted-foreground leading-relaxed">
-                        Add{" "}
-                        <span className="font-semibold text-foreground">
-                          {LINE_BOT_HANDLE}
-                        </span>{" "}
-                        on LINE, then send this 6-digit code as a message to link your account.
-                      </p>
+                      <div className="flex justify-center my-2">
+                        <LineConnectCard botHandle={LINE_BOT_HANDLE} />
+                      </div>
                       <div className="flex flex-col sm:flex-row gap-2">
                         <Button
                           onClick={handleCopyLinkCode}

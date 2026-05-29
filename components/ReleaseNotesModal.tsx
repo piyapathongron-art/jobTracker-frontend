@@ -26,6 +26,20 @@ interface Release {
 
 const RELEASES: Release[] = [
   {
+    version: "v1.8.0",
+    date: "2026-05-29",
+    changes: [
+      {
+        type: "feat",
+        text: "Meet น้องจ๊อบแจ๊บ (Jobjab)! The LINE bot now has a cute Thai persona and can save jobs straight from chat — just describe a role and it logs it for you.",
+      },
+      {
+        type: "feat",
+        text: "Smarter screenshot/URL parser: the bot now detects when an image or link isn't a job posting and politely tells you instead of saving junk.",
+      },
+    ],
+  },
+  {
     version: "v1.7.0",
     date: "2026-05-29",
     changes: [
