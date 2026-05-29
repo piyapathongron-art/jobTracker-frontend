@@ -26,6 +26,16 @@ interface Release {
 
 const RELEASES: Release[] = [
   {
+    version: "v1.6.0",
+    date: "2026-05-29",
+    changes: [
+      {
+        type: "feat",
+        text: "Added LINE Official Account bot! Link your account, save jobs by sharing a URL in chat, ask the AI career advisor, and get push reminders the day before interviews.",
+      },
+    ],
+  },
+  {
     version: "v1.5.0",
     date: "2026-05-28",
     changes: [

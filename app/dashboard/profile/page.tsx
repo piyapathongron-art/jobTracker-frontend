@@ -29,6 +29,9 @@ import {
   Link as LinkIcon,
   MapPin,
   Sparkles,
+  MessageCircle,
+  Copy,
+  Unlink,
 } from "lucide-react";
 
 interface QuotaState {
@@ -40,6 +43,8 @@ interface QuotaState {
   scrapeLimit: number;
   nextQuotaReset: string;
 }
+
+const LINE_BOT_HANDLE = process.env.NEXT_PUBLIC_LINE_BOT_HANDLE ?? "@your-jobtracker-bot";
 
 export default function ProfilePage() {
   const token = useAuthStore((s) => s.token);
@@ -75,6 +80,16 @@ export default function ProfilePage() {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // LINE state
+  const [lineLinked, setLineLinked] = useState(false);
+  const [linkCode, setLinkCode] = useState<string | null>(null);
+  const [isGeneratingCode, setIsGeneratingCode] = useState(false);
+  const [isUnlinking, setIsUnlinking] = useState(false);
+  const [lineMessage, setLineMessage] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
+
   useEffect(() => {
     async function fetchProfile() {
       try {
@@ -82,6 +97,8 @@ export default function ProfilePage() {
         setName(res.data.name || "");
         setHomeLocation(res.data.homeLocation || "");
         setResume(res.data.baseResume || "");
+        setLineLinked(!!res.data.lineUserId);
+        setLinkCode(res.data.lineLinkCode ?? null);
         setQuota({
           tokenUsageTotal:   res.data.tokenUsageTotal   ?? 0,
           tokenUsageWindow:  res.data.tokenUsageWindow  ?? 0,
@@ -135,6 +152,52 @@ export default function ProfilePage() {
       });
     } finally {
       setIsSavingLocation(false);
+    }
+  }
+
+  async function handleGenerateLinkCode() {
+    setIsGeneratingCode(true);
+    setLineMessage(null);
+    try {
+      const res = await api.post<{ code: string }>("/api/users/line-code");
+      setLinkCode(res.data.code);
+    } catch (error) {
+      const err = error as { response?: { data?: { error?: string } } };
+      setLineMessage({
+        type: "error",
+        text: err.response?.data?.error || "Failed to generate link code.",
+      });
+    } finally {
+      setIsGeneratingCode(false);
+    }
+  }
+
+  async function handleCopyLinkCode() {
+    if (!linkCode || typeof navigator === "undefined") return;
+    try {
+      await navigator.clipboard.writeText(linkCode);
+      setLineMessage({ type: "success", text: "Code copied to clipboard." });
+    } catch {
+      setLineMessage({ type: "error", text: "Couldn't copy automatically — select and copy manually." });
+    }
+  }
+
+  async function handleUnlinkLine() {
+    setIsUnlinking(true);
+    setLineMessage(null);
+    try {
+      await api.delete("/api/users/line-link");
+      setLineLinked(false);
+      setLinkCode(null);
+      setLineMessage({ type: "success", text: "LINE account unlinked." });
+    } catch (error) {
+      const err = error as { response?: { data?: { error?: string } } };
+      setLineMessage({
+        type: "error",
+        text: err.response?.data?.error || "Failed to unlink LINE account.",
+      });
+    } finally {
+      setIsUnlinking(false);
     }
   }
 
@@ -292,6 +355,117 @@ export default function ProfilePage() {
                   </Button>
                 </div>
               </div>
+            </CardContent>
+          </Card>
+
+          {/* ── LINE Notification card ── */}
+          <Card className="border-border">
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <MessageCircle className="h-5 w-5 text-primary" />
+                <CardTitle>LINE Notification</CardTitle>
+              </div>
+              <CardDescription>
+                Link your LINE account to save jobs by sharing a URL and get interview reminders.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {lineMessage && (
+                <div
+                  className={`p-3 rounded-lg flex items-center gap-2 text-sm ${
+                    lineMessage.type === "success"
+                      ? "bg-green-50 text-green-700 border border-green-200"
+                      : "bg-red-50 text-red-700 border border-red-200"
+                  }`}
+                >
+                  {lineMessage.type === "success" ? (
+                    <CheckCircle2 className="h-4 w-4 shrink-0" />
+                  ) : (
+                    <AlertCircle className="h-4 w-4 shrink-0" />
+                  )}
+                  {lineMessage.text}
+                </div>
+              )}
+
+              {lineLinked ? (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700">
+                    <CheckCircle2 className="h-4 w-4 shrink-0" />
+                    LINE account linked. You&apos;ll receive interview reminders here.
+                  </div>
+                  <Button
+                    onClick={handleUnlinkLine}
+                    disabled={isUnlinking}
+                    variant="outline"
+                    className="w-full gap-1.5 min-h-[44px]"
+                  >
+                    {isUnlinking ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Unlink className="h-4 w-4" />
+                    )}
+                    Unlink LINE account
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {linkCode ? (
+                    <>
+                      <div className="rounded-lg border border-primary/30 bg-primary/5 p-4 text-center">
+                        <p className="text-xs uppercase tracking-wider text-muted-foreground mb-2">
+                          Your 6-digit pairing code
+                        </p>
+                        <p className="text-3xl font-black tabular-nums tracking-[0.4em] text-primary">
+                          {linkCode}
+                        </p>
+                      </div>
+                      <p className="text-xs text-muted-foreground leading-relaxed">
+                        Add{" "}
+                        <span className="font-semibold text-foreground">
+                          {LINE_BOT_HANDLE}
+                        </span>{" "}
+                        on LINE, then send this 6-digit code as a message to link your account.
+                      </p>
+                      <div className="flex flex-col sm:flex-row gap-2">
+                        <Button
+                          onClick={handleCopyLinkCode}
+                          variant="outline"
+                          className="gap-1.5 w-full sm:w-auto min-h-[44px]"
+                        >
+                          <Copy className="h-4 w-4" />
+                          Copy code
+                        </Button>
+                        <Button
+                          onClick={handleGenerateLinkCode}
+                          disabled={isGeneratingCode}
+                          variant="ghost"
+                          className="gap-1.5 w-full sm:w-auto min-h-[44px]"
+                        >
+                          {isGeneratingCode ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <MessageCircle className="h-4 w-4" />
+                          )}
+                          Regenerate
+                        </Button>
+                      </div>
+                    </>
+                  ) : (
+                    <Button
+                      onClick={handleGenerateLinkCode}
+                      disabled={isGeneratingCode}
+                      className="w-full gap-1.5 min-h-[44px]"
+                    >
+                      {isGeneratingCode ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <MessageCircle className="h-4 w-4" />
+                      )}
+                      Generate LINE Link Code
+                    </Button>
+                  )}
+                </div>
+              )}
             </CardContent>
           </Card>
 

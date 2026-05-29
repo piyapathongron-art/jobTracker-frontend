@@ -23,6 +23,7 @@ export interface JobApplication {
   notes: string | null;
   source: string | null;
   appliedAt: string | null;
+  interviewDate: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -41,6 +42,8 @@ export interface UserProfile {
   email: string;
   baseResume: string | null;
   homeLocation: string | null;
+  lineUserId: string | null;
+  lineLinkCode: string | null;
   tokenUsageTotal: number;
   tokenUsageWindow: number;
   tokenLimit: number;

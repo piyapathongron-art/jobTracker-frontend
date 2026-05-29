@@ -87,6 +87,7 @@ const jobFormSchema = z.object({
   notes: z.string().optional(),
   source: z.string().optional(),
   appliedAt: z.string().optional(),
+  interviewDate: z.string().optional(),
 });
 
 const SOURCE_OPTIONS = [
@@ -104,6 +105,12 @@ const SOURCE_OPTIONS = [
   "Referral",
   "Other",
 ] as const;
+
+function toLocalDateTimeInput(iso: string): string {
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
 
 type JobFormValues = z.infer<typeof jobFormSchema>;
 
@@ -135,8 +142,13 @@ export function JobForm({ initialData, onSubmit, onCancel, submitLabel = "Save",
       appliedAt:      initialData?.appliedAt
         ? new Date(initialData.appliedAt).toISOString().split("T")[0]
         : "",
+      interviewDate:  initialData?.interviewDate
+        ? toLocalDateTimeInput(initialData.interviewDate)
+        : "",
     },
   });
+
+  const watchedStatus = useWatch({ control: form.control, name: "status" });
 
   const [submitError, setSubmitError] = useState<string | null>(null);
 
@@ -235,6 +247,7 @@ export function JobForm({ initialData, onSubmit, onCancel, submitLabel = "Save",
         notes:          values.notes?.trim()    || null,
         source:         values.source?.trim()   || null,
         appliedAt:      values.appliedAt        ? new Date(values.appliedAt).toISOString() : null,
+        interviewDate:  values.interviewDate    ? new Date(values.interviewDate).toISOString() : null,
       });
     } catch (error) {
       const err = error as { response?: { data?: { error?: string } } };
@@ -581,20 +594,37 @@ export function JobForm({ initialData, onSubmit, onCancel, submitLabel = "Save",
           />
         </div>
 
-        {/* ── Applied Date ── */}
-        <FormField
-          control={form.control}
-          name="appliedAt"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Applied Date</FormLabel>
-              <FormControl>
-                <Input type="date" {...field} disabled={isSubmitting} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
+        {/* ── Applied Date + Interview Date ── */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="appliedAt"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Applied Date</FormLabel>
+                <FormControl>
+                  <Input type="date" {...field} disabled={isSubmitting} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          {watchedStatus === "INTERVIEWING" && (
+            <FormField
+              control={form.control}
+              name="interviewDate"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Interview Date &amp; Time</FormLabel>
+                  <FormControl>
+                    <Input type="datetime-local" {...field} disabled={isSubmitting} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
           )}
-        />
+        </div>
 
         {/* ── Job Description ── */}
         <FormField

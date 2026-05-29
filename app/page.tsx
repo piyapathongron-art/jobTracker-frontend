@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/store/useAuthStore";
@@ -24,10 +24,11 @@ export default function Home() {
   const setLang = useLangStore((s) => s.setLang);
   const t = getDictionary(lang);
   
-  const [isMounted, setIsMounted] = useState(false);
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
+  const isMounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
 
   const isLoggedIn = isMounted && !!user;
 
