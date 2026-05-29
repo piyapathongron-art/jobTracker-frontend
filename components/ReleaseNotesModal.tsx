@@ -26,6 +26,20 @@ interface Release {
 
 const RELEASES: Release[] = [
   {
+    version: "v1.7.0",
+    date: "2026-05-29",
+    changes: [
+      {
+        type: "feat",
+        text: "Upgraded the LINE bot: send a screenshot of any JD and AI will save it as a job, and the career advisor now sees your active applications for personalized advice.",
+      },
+      {
+        type: "feat",
+        text: "LINE bot now enforces weekly AI token and scraper quotas, matching the limits on the web app.",
+      },
+    ],
+  },
+  {
     version: "v1.6.0",
     date: "2026-05-29",
     changes: [
