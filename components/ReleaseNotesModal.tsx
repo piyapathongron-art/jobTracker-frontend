@@ -26,6 +26,28 @@ interface Release {
 
 const RELEASES: Release[] = [
   {
+    version: "v1.9.0",
+    date: "2026-05-30",
+    changes: [
+      {
+        type: "feat",
+        text: "GDPR/PDPA compliance: Export all your data as a JSON file from the Profile page (Danger Zone).",
+      },
+      {
+        type: "feat",
+        text: "Hard Delete Account: Permanently erase your account and all data via a confirmation modal that requires typing your first name.",
+      },
+      {
+        type: "feat",
+        text: "API Rate Limiting: Added express-rate-limit protection — 100 req/15 min globally, 10 req/15 min for auth, 30 req/15 min for AI endpoints.",
+      },
+      {
+        type: "feat",
+        text: "Prompt Injection Defense: All 9 AI system prompts now contain explicit security instructions to reject hidden user commands.",
+      },
+    ],
+  },
+  {
     version: "v1.8.0",
     date: "2026-05-29",
     changes: [

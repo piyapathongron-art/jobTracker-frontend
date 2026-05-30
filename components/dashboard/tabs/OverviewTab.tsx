@@ -106,6 +106,16 @@ export function OverviewTab({
               : "Not applied yet"}
           </p>
         </div>
+        <div className="space-y-1">
+          <p className="text-xs font-medium text-muted-foreground uppercase flex items-center gap-1">
+            <Calendar className="h-3 w-3 text-violet-500" /> Interview Date
+          </p>
+          <p className="text-sm font-semibold text-violet-700">
+            {job.interviewDate
+              ? new Date(job.interviewDate).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })
+              : "Not scheduled"}
+          </p>
+        </div>
       </div>
 
       <div className="space-y-1">

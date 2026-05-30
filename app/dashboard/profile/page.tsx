@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Card,
   CardContent,
@@ -14,6 +15,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { api } from "@/lib/axios";
 import { useAuthStore } from "@/store/useAuthStore";
 import { LineConnectCard } from "@/components/LineConnectCard";
@@ -33,6 +42,9 @@ import {
   MessageCircle,
   Copy,
   Unlink,
+  Download,
+  Trash2,
+  ShieldAlert,
 } from "lucide-react";
 
 interface QuotaState {
@@ -48,9 +60,11 @@ interface QuotaState {
 const LINE_BOT_HANDLE = process.env.NEXT_PUBLIC_LINE_BOT_HANDLE ?? "@745mozkj";
 
 export default function ProfilePage() {
+  const router = useRouter();
   const token = useAuthStore((s) => s.token);
   const storeUser = useAuthStore((s) => s.user);
   const setAuth = useAuthStore((s) => s.setAuth);
+  const clearAuth = useAuthStore((s) => s.clearAuth);
 
   // Name state
   const [name, setName] = useState("");
@@ -87,6 +101,16 @@ export default function ProfilePage() {
   const [isGeneratingCode, setIsGeneratingCode] = useState(false);
   const [isUnlinking, setIsUnlinking] = useState(false);
   const [lineMessage, setLineMessage] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
+
+  // Danger Zone state
+  const [isExporting, setIsExporting] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteConfirmName, setDeleteConfirmName] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [dangerMessage, setDangerMessage] = useState<{
     type: "success" | "error";
     text: string;
   } | null>(null);
@@ -274,6 +298,51 @@ export default function ProfilePage() {
     } finally {
       setIsUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  }
+
+  async function handleExportData() {
+    setIsExporting(true);
+    setDangerMessage(null);
+    try {
+      const res = await api.get("/api/users/profile/export");
+      const json = JSON.stringify(res.data, null, 2);
+      const blob = new Blob([json], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "my_data.json";
+      a.click();
+      URL.revokeObjectURL(url);
+      setDangerMessage({ type: "success", text: "Your data has been downloaded as my_data.json." });
+    } catch (error) {
+      const err = error as { response?: { data?: { error?: string } } };
+      setDangerMessage({
+        type: "error",
+        text: err.response?.data?.error || "Failed to export data. Please try again.",
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  }
+
+  async function handleDeleteAccount() {
+    setIsDeleting(true);
+    try {
+      await api.delete("/api/users/profile/me");
+      // Purge all client-side state and localStorage
+      localStorage.clear();
+      clearAuth();
+      // Redirect to login
+      router.push("/login");
+    } catch (error) {
+      const err = error as { response?: { data?: { error?: string } } };
+      setDangerMessage({
+        type: "error",
+        text: err.response?.data?.error || "Failed to delete account. Please try again.",
+      });
+      setIsDeleting(false);
+      setShowDeleteModal(false);
     }
   }
 
@@ -733,6 +802,170 @@ export default function ProfilePage() {
 
         </CardContent>
       </Card>
+
+      {/* ── Danger Zone ── */}
+      <Card className="border-2 border-red-600 ">
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <ShieldAlert className="h-5 w-5 text-red-600 dark:text-red-400" />
+            <CardTitle className="text-red-700 dark:text-red-400">Danger Zone</CardTitle>
+          </div>
+          <CardDescription className="text-red-600/80 dark:text-red-400/80">
+            Actions here are irreversible. Please proceed with caution.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {dangerMessage && (
+            <div
+              className={`p-3 rounded-lg flex items-center gap-2 text-sm ${
+                dangerMessage.type === "success"
+                  ? "bg-green-50 text-green-700 border border-green-200"
+                  : "bg-red-100 text-red-700 border border-red-300"
+              }`}
+            >
+              {dangerMessage.type === "success" ? (
+                <CheckCircle2 className="h-4 w-4 shrink-0" />
+              ) : (
+                <AlertCircle className="h-4 w-4 shrink-0" />
+              )}
+              {dangerMessage.text}
+            </div>
+          )}
+
+          <div className="flex flex-col sm:flex-row gap-3">
+            {/* Export My Data */}
+            <div className="flex-1 rounded-lg border border-red-200 dark:border-red-800 bg-white dark:bg-background p-4 space-y-2">
+              <div className="flex items-center gap-2">
+                <Download className="h-4 w-4 text-red-600 dark:text-red-400" />
+                <span className="font-semibold text-sm text-foreground">Export My Data</span>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Download all your profile information and job applications as a JSON file.
+              </p>
+              <Button
+                id="export-data-btn"
+                variant="outline"
+                size="sm"
+                onClick={handleExportData}
+                disabled={isExporting}
+                className="w-full gap-1.5 border-red-200 hover:bg-red-50 hover:text-red-700 dark:border-red-800 dark:hover:bg-red-950"
+              >
+                {isExporting ? (
+                  <><Loader2 className="h-4 w-4 animate-spin" />Exporting...</>
+                ) : (
+                  <><Download className="h-4 w-4" />Download my_data.json</>
+                )}
+              </Button>
+            </div>
+
+            {/* Delete Account */}
+            <div className="flex-1 rounded-lg border border-red-300 dark:border-red-700 bg-white dark:bg-background p-4 space-y-2">
+              <div className="flex items-center gap-2">
+                <Trash2 className="h-4 w-4 text-red-600 dark:text-red-400" />
+                <span className="font-semibold text-sm text-foreground">Delete Account</span>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Permanently delete your account and all associated data. This cannot be undone.
+              </p>
+              <Button
+                id="delete-account-btn"
+                variant="destructive"
+                size="sm"
+                onClick={() => {
+                  setDeleteConfirmName("");
+                  setShowDeleteModal(true);
+                }}
+                className="w-full gap-1.5"
+              >
+                <Trash2 className="h-4 w-4" />
+                Delete My Account
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* ── Delete Account Confirmation Modal ── */}
+      <Dialog open={showDeleteModal} onOpenChange={(open) => {
+        if (!isDeleting) {
+          setShowDeleteModal(open);
+          if (!open) setDeleteConfirmName("");
+        }
+      }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <div className="flex items-center gap-2 mb-1">
+              <Trash2 className="h-5 w-5 text-destructive" />
+              <DialogTitle className="text-destructive">Delete Account</DialogTitle>
+            </div>
+            <DialogDescription asChild>
+              <div className="space-y-2 text-left pt-1 text-sm text-muted-foreground">
+                <span className="block">
+                  This action is <strong>permanent and irreversible</strong>. All your data will be
+                  erased from our servers, including:
+                </span>
+                <ul className="list-disc list-inside space-y-1 pl-2">
+                  <li>Your profile and resume</li>
+                  <li>All job applications and their history</li>
+                  <li>AI-generated content and caches</li>
+                  <li>LINE account link</li>
+                </ul>
+              </div>
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3 py-2">
+            <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm flex items-start gap-2  dark:border-red-800 dark:text-red-400">
+              <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+              <span>
+                To confirm, type your first name{" "}
+                <strong>&quot;{storeUser?.name?.split(" ")[0] ?? "your name"}&quot;</strong> below:
+              </span>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="delete-confirm-input">First Name Confirmation</Label>
+              <Input
+                id="delete-confirm-input"
+                placeholder={storeUser?.name?.split(" ")[0] ?? "Enter your first name"}
+                value={deleteConfirmName}
+                onChange={(e) => setDeleteConfirmName(e.target.value)}
+                disabled={isDeleting}
+                className="border-destructive/30 focus-visible:ring-destructive/30"
+              />
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              id="delete-cancel-btn"
+              variant="outline"
+              onClick={() => {
+                setShowDeleteModal(false);
+                setDeleteConfirmName("");
+              }}
+              disabled={isDeleting}
+            >
+              Cancel
+            </Button>
+            <Button
+              id="delete-confirm-btn"
+              variant="destructive"
+              onClick={handleDeleteAccount}
+              disabled={
+                isDeleting ||
+                deleteConfirmName !== (storeUser?.name?.split(" ")[0] ?? "")
+              }
+              className="gap-1.5"
+            >
+              {isDeleting ? (
+                <><Loader2 className="h-4 w-4 animate-spin" />Deleting...</>
+              ) : (
+                <><Trash2 className="h-4 w-4" />Confirm Delete</>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
