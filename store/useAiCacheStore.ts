@@ -49,6 +49,8 @@ interface AiCacheState {
   setResumeScore: (jobId: string, data: ResumeScoreCache) => void;
   setOptimizedResume: (jobId: string, data: OptimizedResumeCache) => void;
   clearJob: (jobId: string) => void;
+  /** Prune cache entries for job IDs that are no longer in the user's active job list. */
+  cleanupUnusedCaches: (activeJobIds: string[]) => void;
 }
 
 export const useAiCacheStore = create<AiCacheState>()(
@@ -100,6 +102,17 @@ export const useAiCacheStore = create<AiCacheState>()(
         set((state) => {
           const next = { ...state.cache };
           delete next[jobId];
+          return { cache: next };
+        }),
+      cleanupUnusedCaches: (activeJobIds) =>
+        set((state) => {
+          const activeSet = new Set(activeJobIds);
+          const next: Record<string, JobAiCache> = {};
+          for (const jobId of Object.keys(state.cache)) {
+            if (activeSet.has(jobId)) {
+              next[jobId] = state.cache[jobId];
+            }
+          }
           return { cache: next };
         }),
     }),

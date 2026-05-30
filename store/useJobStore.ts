@@ -8,7 +8,7 @@ interface JobState {
   jobs: JobApplication[];
   isLoading: boolean;
   error: string | null;
-  fetchJobs: () => Promise<void>;
+  fetchJobs: (search?: string) => Promise<void>;
   addJob: (job: NewJob) => Promise<void>;
   updateJobStatus: (id: string, newStatus: Status) => Promise<void>;
   updateJobDetails: (id: string, updates: Partial<JobApplication>) => Promise<void>;
@@ -23,10 +23,11 @@ export const useJobStore = create<JobState>((set, get) => ({
 
   clearError: () => set({ error: null }),
 
-  fetchJobs: async () => {
+  fetchJobs: async (search?: string) => {
     set({ isLoading: true, error: null });
     try {
-      const { data } = await api.get<JobApplication[]>("/api/applications");
+      const params = search ? { params: { search } } : {};
+      const { data } = await api.get<JobApplication[]>("/api/applications", params);
       set({ jobs: data, isLoading: false });
     } catch {
       set({ isLoading: false, error: "Failed to load applications. Please refresh." });
