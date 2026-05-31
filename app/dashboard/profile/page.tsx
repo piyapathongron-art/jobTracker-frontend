@@ -64,6 +64,7 @@ export default function ProfilePage() {
   const token = useAuthStore((s) => s.token);
   const storeUser = useAuthStore((s) => s.user);
   const setAuth = useAuthStore((s) => s.setAuth);
+  const updateUser = useAuthStore((s) => s.updateUser);
   const clearAuth = useAuthStore((s) => s.clearAuth);
 
   // Name state
@@ -148,8 +149,8 @@ export default function ProfilePage() {
     setNameMessage(null);
     try {
       const res = await api.put("/api/users/profile", { name: name.trim() });
-      if (token && res.data) {
-        setAuth(token, { id: res.data.id, name: res.data.name, email: res.data.email });
+      if (res.data) {
+        updateUser({ name: res.data.name });
       }
       setNameMessage({ type: "success", text: "Display name updated!" });
     } catch (error) {
@@ -231,9 +232,7 @@ export default function ProfilePage() {
     setResumeMessage(null);
     try {
       await api.put("/api/users/profile", { baseResume: resume });
-      if (storeUser && token) {
-        setAuth(token, { ...storeUser, hasResume: !!resume.trim() });
-      }
+      updateUser({ hasResume: !!resume.trim() });
       setResumeMessage({
         type: "success",
         text: "Master resume updated successfully!",
@@ -269,9 +268,7 @@ export default function ProfilePage() {
         headers: { "Content-Type": "multipart/form-data" },
       });
       setResume(res.data.baseResume);
-      if (storeUser && token) {
-        setAuth(token, { ...storeUser, hasResume: !!res.data.baseResume });
-      }
+      updateUser({ hasResume: !!res.data.baseResume });
       try {
         const profile = await api.get("/api/users/profile");
         setQuota({
