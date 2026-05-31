@@ -70,8 +70,9 @@ export function JobTable() {
   const deleteJob = useJobStore((s) => s.deleteJob);
   const isTrending = useInsightsStore((s) => s.isTrending);
 
-  const [selectedJob, setSelectedJob] = useState<JobApplication | null>(null);
+  const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const selectedJob = selectedJobId ? jobs.find((j) => j.id === selectedJobId) ?? null : null;
 
   // Comparison state
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -82,7 +83,7 @@ export function JobTable() {
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
 
   function handleRowClick(job: JobApplication) {
-    setSelectedJob(job);
+    setSelectedJobId(job.id);
     setSheetOpen(true);
   }
 

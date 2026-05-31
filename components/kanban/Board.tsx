@@ -15,8 +15,9 @@ export function Board() {
   const kanbanColumns = useKanbanStore((s) => s.kanbanColumns);
   const reorderColumns = useKanbanStore((s) => s.reorderColumns);
 
-  const [selectedJob, setSelectedJob] = useState<JobApplication | null>(null);
+  const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const selectedJob = selectedJobId ? jobs.find((j) => j.id === selectedJobId) ?? null : null;
 
   useEffect(() => {
     let mounted = true;
@@ -42,7 +43,7 @@ export function Board() {
   }
 
   function handleJobClick(job: JobApplication) {
-    setSelectedJob(job);
+    setSelectedJobId(job.id);
     setSheetOpen(true);
   }
 
