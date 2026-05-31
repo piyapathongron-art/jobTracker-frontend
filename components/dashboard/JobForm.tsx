@@ -88,6 +88,7 @@ const jobFormSchema = z.object({
   source: z.string().optional(),
   appliedAt: z.string().optional(),
   interviewDate: z.string().optional(),
+  hrContact: z.string().optional(),
 });
 
 const SOURCE_OPTIONS = [
@@ -145,6 +146,7 @@ export function JobForm({ initialData, onSubmit, onCancel, submitLabel = "Save",
       interviewDate:  initialData?.interviewDate
         ? toLocalDateTimeInput(initialData.interviewDate)
         : "",
+      hrContact:      initialData?.hrContact ?? "",
     },
   });
 
@@ -177,6 +179,7 @@ export function JobForm({ initialData, onSubmit, onCancel, submitLabel = "Save",
     notes?: string;
     source?: string;
     url?: string;
+    hrContact?: string | null;
   };
 
   function applyParsedToForm(data: ParsedJD, urlOverride?: string) {
@@ -196,6 +199,7 @@ export function JobForm({ initialData, onSubmit, onCancel, submitLabel = "Save",
       const finalSource = (SOURCE_OPTIONS as readonly string[]).includes(data.source) ? data.source : "Other";
       form.setValue("source", finalSource, { shouldValidate: true });
     }
+    if (data.hrContact) form.setValue("hrContact", data.hrContact, { shouldValidate: true });
   }
 
   async function handleAIParse() {
@@ -248,6 +252,7 @@ export function JobForm({ initialData, onSubmit, onCancel, submitLabel = "Save",
         source:         values.source?.trim()   || null,
         appliedAt:      values.appliedAt        ? new Date(values.appliedAt).toISOString() : null,
         interviewDate:  values.interviewDate    ? new Date(values.interviewDate).toISOString() : null,
+        hrContact:      values.hrContact?.trim() || null,
       });
     } catch (error) {
       const err = error as { response?: { data?: { error?: string } } };
@@ -609,21 +614,19 @@ export function JobForm({ initialData, onSubmit, onCancel, submitLabel = "Save",
               </FormItem>
             )}
           />
-          {watchedStatus === "INTERVIEWING" && (
-            <FormField
-              control={form.control}
-              name="interviewDate"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Interview Date &amp; Time</FormLabel>
-                  <FormControl>
-                    <Input type="datetime-local" {...field} disabled={isSubmitting} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          )}
+          <FormField
+            control={form.control}
+            name="interviewDate"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Interview Date &amp; Time</FormLabel>
+                <FormControl>
+                  <Input type="datetime-local" {...field} disabled={isSubmitting} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
         </div>
 
         {/* ── Job Description ── */}
@@ -657,6 +660,25 @@ export function JobForm({ initialData, onSubmit, onCancel, submitLabel = "Save",
                 <Textarea
                   placeholder="Tech stack, interview notes, etc."
                   className="min-h-[100px]"
+                  {...field}
+                  disabled={isSubmitting}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {/* ── HR Contact ── */}
+        <FormField
+          control={form.control}
+          name="hrContact"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>HR Contact</FormLabel>
+              <FormControl>
+                <Input
+                  placeholder="e.g. Email: hr@company.com | LINE: @hrjob | Tel: 081-234-5678"
                   {...field}
                   disabled={isSubmitting}
                 />

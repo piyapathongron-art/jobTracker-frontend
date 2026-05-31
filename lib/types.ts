@@ -24,6 +24,7 @@ export interface JobApplication {
   source: string | null;
   appliedAt: string | null;
   interviewDate: string | null;
+  hrContact: string | null;
   createdAt: string;
   updatedAt: string;
 }

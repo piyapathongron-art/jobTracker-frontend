@@ -19,6 +19,7 @@ import {
   Calendar,
   Link as LinkIcon,
   Trash2,
+  Contact,
 } from "lucide-react";
 import type { JobApplication } from "@/lib/types";
 import type { NewJob } from "@/store/useJobStore";
@@ -114,6 +115,14 @@ export function OverviewTab({
             {job.interviewDate
               ? new Date(job.interviewDate).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })
               : "Not scheduled"}
+          </p>
+        </div>
+        <div className="space-y-1">
+          <p className="text-xs font-medium text-muted-foreground uppercase flex items-center gap-1">
+            <Contact className="h-3 w-3 text-blue-500" /> HR Contact Info
+          </p>
+          <p className="text-sm font-semibold text-blue-700">
+            {job.hrContact || "No contact info"}
           </p>
         </div>
       </div>

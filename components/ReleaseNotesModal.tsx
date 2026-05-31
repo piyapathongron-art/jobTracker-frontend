@@ -21,10 +21,21 @@ type ChangeType = "feat" | "fix" | "hotfix" | "refactor";
 interface Release {
   version: string;
   date: string;
+  title?: string;
   changes: { type: ChangeType; text: string }[];
 }
 
 const RELEASES: Release[] = [
+  {
+    version: "v1.10.0",
+    date: "2026-05-31",
+    title: "HR Contact Tracking",
+    changes: [
+      { type: "feat", text: "New 'HR Contact' field on all job applications — store email, LINE ID, phone, or Facebook of the recruiter." },
+      { type: "feat", text: "AI JD Parser (URL, image, LINE Bot) now automatically extracts HR contact info from job postings." },
+      { type: "feat", text: "LINE Bot (Jobjab) now warns you when no HR contact info was found, so you remember to fill it in." },
+    ],
+  },
   {
     version: "v1.9.0",
     date: "2026-05-30",
