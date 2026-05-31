@@ -27,6 +27,16 @@ interface Release {
 
 const RELEASES: Release[] = [
   {
+    version: "v1.12.0",
+    date: "2026-05-31",
+    title: "Premium Landing Page & Jobjab LINE Bot",
+    changes: [
+      { type: "feat", text: "Redesigned landing page with a modern Social Proof-focused aesthetic using the brand typeface." },
+      { type: "feat", text: "Created an interactive CSS LINE Bot preview showcasing our smart 'Jobjab' companion with step-by-step visuals." },
+      { type: "feat", text: "Fully localized all landing page copy into Thai and English dictionaries (zero hardcoded strings)." }
+    ],
+  },
+  {
     version: "v1.11.0",
     date: "2026-05-31",
     title: "Edit Mode UX & Layout Enhancements",
