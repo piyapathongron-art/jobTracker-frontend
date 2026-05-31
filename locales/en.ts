@@ -63,7 +63,7 @@ export const en = {
     heroBadge: "🔥 AI-Powered by Jobjab bot & Gemini",
     heroTitlePart1: "Stop Tracking.",
     heroTitlePart2: "Start Landing Offers.",
-    socialProofBadge: "Loved by 10,000+ job seekers",
+    socialProofBadge: "Loved by job seekers",
     metric1Value: "150,000+",
     metric1Label: "Applications Tracked",
     metric2Value: "20+ Hours",

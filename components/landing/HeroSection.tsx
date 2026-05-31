@@ -62,7 +62,7 @@ export function HeroSection({ isLoggedIn, t }: HeroSectionProps) {
       </div>
 
       {/* Metrics Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto pt-8 border-t border-[#0EA5E9]/15">
+      {/* <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto pt-8 border-t border-[#0EA5E9]/15">
         {[
           { value: t.landing.metric1Value, label: t.landing.metric1Label },
           { value: t.landing.metric2Value, label: t.landing.metric2Label },
@@ -74,7 +74,7 @@ export function HeroSection({ isLoggedIn, t }: HeroSectionProps) {
             <div className="text-xs font-extrabold text-[#0C4A6E]/70 uppercase tracking-wider">{m.label}</div>
           </div>
         ))}
-      </div>
+      </div> */}
     </section>
   );
 }

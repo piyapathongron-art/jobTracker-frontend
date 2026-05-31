@@ -65,7 +65,7 @@ export const th: Dictionary = {
     heroBadge: "🔥 ขับเคลื่อนด้วยระบบ AI ผ่าน น้องจ๊อบแจ๊บ & Gemini",
     heroTitlePart1: "เลิกจดในตาราง.",
     heroTitlePart2: "เริ่มรับข้อเสนองานจริง.",
-    socialProofBadge: "ได้รับความไว้วางใจจากผู้สมัครงานกว่า 10,000 คน",
+    socialProofBadge: "ได้รับความไว้วางใจจากผู้สมัครงาน",
     metric1Value: "150,000+",
     metric1Label: "ใบสมัครที่ถูกบันทึก",
     metric2Value: "มากกว่า 20 ชม.",

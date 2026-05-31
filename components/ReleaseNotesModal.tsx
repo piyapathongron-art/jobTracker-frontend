@@ -43,10 +43,14 @@ export function ReleaseNotesModal() {
   const [dismissed, setDismissed] = useState(false);
   const [dontShowAgain, setDontShowAgain] = useState(false);
 
+  const latestRelease = RELEASES[0]!;
+  const featuredChanges = latestRelease.changes.filter((c) => c.featured);
+
   const isOpen =
     !dismissed &&
     lastSeen !== CURRENT_APP_VERSION &&
-    isMinorOrMajor(CURRENT_APP_VERSION);
+    isMinorOrMajor(CURRENT_APP_VERSION) &&
+    featuredChanges.length > 0;
 
   const handleClose = () => {
     if (dontShowAgain && typeof window !== "undefined") {
@@ -54,8 +58,6 @@ export function ReleaseNotesModal() {
     }
     setDismissed(true);
   };
-
-  const latestRelease = RELEASES[0]!;
 
   return (
     <Dialog
@@ -80,7 +82,7 @@ export function ReleaseNotesModal() {
             <span className="text-xs text-muted-foreground">{latestRelease.date}</span>
           </div>
           <ul className="space-y-3">
-            {latestRelease.changes.map((change, i) => (
+            {featuredChanges.map((change, i) => (
               <li key={i} className="flex gap-2 items-start text-sm">
                 <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
                 <span className="leading-relaxed">{change.text}</span>
