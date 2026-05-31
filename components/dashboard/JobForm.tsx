@@ -121,9 +121,17 @@ interface JobFormProps {
   onCancel: () => void;
   submitLabel?: string;
   initialScrapeUrl?: string;
+  hideActions?: boolean;
 }
 
-export function JobForm({ initialData, onSubmit, onCancel, submitLabel = "Save", initialScrapeUrl }: JobFormProps) {
+export function JobForm({
+  initialData,
+  onSubmit,
+  onCancel,
+  submitLabel = "Save",
+  initialScrapeUrl,
+  hideActions = false,
+}: JobFormProps) {
   const form = useForm<JobFormValues>({
     resolver: zodResolver(jobFormSchema),
     defaultValues: {
@@ -264,7 +272,7 @@ export function JobForm({ initialData, onSubmit, onCancel, submitLabel = "Save",
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+      <form onSubmit={form.handleSubmit(handleSubmit)} id="job-edit-form" className="space-y-4">
         {submitError && (
           <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
             {submitError}
@@ -467,6 +475,40 @@ export function JobForm({ initialData, onSubmit, onCancel, submitLabel = "Save",
           />
         </div>
 
+        {/* ── Interview Date & HR Contact (Grouped together) ── */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="interviewDate"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Interview Date &amp; Time</FormLabel>
+                <FormControl>
+                  <Input type="datetime-local" {...field} disabled={isSubmitting} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="hrContact"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>HR Contact</FormLabel>
+                <FormControl>
+                  <Input
+                    placeholder="e.g. Email: hr@company.com | LINE: @hrjob"
+                    {...field}
+                    disabled={isSubmitting}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
         {/* ── Location + Job URL ── */}
         <div className="grid grid-cols-2 gap-4">
           <FormField
@@ -496,30 +538,6 @@ export function JobForm({ initialData, onSubmit, onCancel, submitLabel = "Save",
             )}
           />
         </div>
-
-        {/* ── Source ── */}
-        <FormField
-          control={form.control}
-          name="source"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Source</FormLabel>
-              <Select value={field.value || ""} onValueChange={field.onChange} disabled={isSubmitting}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Where did you find this job?" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {SOURCE_OPTIONS.map((opt) => (
-                    <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
 
         {/* ── Salary Min + Max ── */}
         <div className="grid grid-cols-2 gap-4">
@@ -599,8 +617,8 @@ export function JobForm({ initialData, onSubmit, onCancel, submitLabel = "Save",
           />
         </div>
 
-        {/* ── Applied Date + Interview Date ── */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {/* ── Applied Date & Source ── */}
+        <div className="grid grid-cols-2 gap-4">
           <FormField
             control={form.control}
             name="appliedAt"
@@ -616,13 +634,22 @@ export function JobForm({ initialData, onSubmit, onCancel, submitLabel = "Save",
           />
           <FormField
             control={form.control}
-            name="interviewDate"
+            name="source"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Interview Date &amp; Time</FormLabel>
-                <FormControl>
-                  <Input type="datetime-local" {...field} disabled={isSubmitting} />
-                </FormControl>
+                <FormLabel>Source</FormLabel>
+                <Select value={field.value || ""} onValueChange={field.onChange} disabled={isSubmitting}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Where did you find this job?" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {SOURCE_OPTIONS.map((opt) => (
+                      <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <FormMessage />
               </FormItem>
             )}
@@ -669,40 +696,23 @@ export function JobForm({ initialData, onSubmit, onCancel, submitLabel = "Save",
           )}
         />
 
-        {/* ── HR Contact ── */}
-        <FormField
-          control={form.control}
-          name="hrContact"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>HR Contact</FormLabel>
-              <FormControl>
-                <Input
-                  placeholder="e.g. Email: hr@company.com | LINE: @hrjob | Tel: 081-234-5678"
-                  {...field}
-                  disabled={isSubmitting}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <div className="flex justify-end gap-2 pt-2">
-          <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
-            Cancel
-          </Button>
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin mr-1.5" />
-                Saving…
-              </>
-            ) : (
-              submitLabel
-            )}
-          </Button>
-        </div>
+        {!hideActions && (
+          <div className="flex justify-end gap-2 pt-2">
+            <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-1.5" />
+                  Saving…
+                </>
+              ) : (
+                submitLabel
+              )}
+            </Button>
+          </div>
+        )}
       </form>
     </Form>
   );

@@ -27,6 +27,16 @@ interface Release {
 
 const RELEASES: Release[] = [
   {
+    version: "v1.11.0",
+    date: "2026-05-31",
+    title: "Edit Mode UX & Layout Enhancements",
+    changes: [
+      { type: "fix", text: "Relocated Save and Cancel buttons to the sheet header during edit mode to prevent scrolling to the bottom." },
+      { type: "fix", text: "Hides the default close (X) button and blocks background interaction / backdrop clicks during editing to prevent accidental data loss." },
+      { type: "refactor", text: "Reorganized and aligned job form field order to match overview viewing layout." },
+    ],
+  },
+  {
     version: "v1.10.0",
     date: "2026-05-31",
     title: "HR Contact Tracking",

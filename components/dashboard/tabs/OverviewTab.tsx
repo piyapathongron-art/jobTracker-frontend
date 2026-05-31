@@ -20,6 +20,7 @@ import {
   Link as LinkIcon,
   Trash2,
   Contact,
+  Compass,
 } from "lucide-react";
 import type { JobApplication } from "@/lib/types";
 import type { NewJob } from "@/store/useJobStore";
@@ -31,6 +32,7 @@ interface OverviewTabProps {
   setIsEditing: (editing: boolean) => void;
   onEditSubmit: (data: NewJob) => Promise<void>;
   onDeleteJob: () => Promise<void>;
+  hideActions?: boolean;
 }
 
 export function OverviewTab({
@@ -39,6 +41,7 @@ export function OverviewTab({
   setIsEditing,
   onEditSubmit,
   onDeleteJob,
+  hideActions = false,
 }: OverviewTabProps) {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
@@ -49,6 +52,7 @@ export function OverviewTab({
           initialData={job}
           onSubmit={onEditSubmit}
           onCancel={() => setIsEditing(false)}
+          hideActions={hideActions}
         />
       </div>
     );
@@ -127,22 +131,36 @@ export function OverviewTab({
         </div>
       </div>
 
-      <div className="space-y-1">
-        <p className="text-xs font-medium text-muted-foreground uppercase flex items-center gap-1">
-          <LinkIcon className="h-3 w-3" /> Job Link
-        </p>
-        {job.url ? (
-          <a
-            href={job.url}
-            target="_blank"
-            rel="noreferrer"
-            className="text-sm font-semibold text-primary hover:underline flex items-center gap-1"
-          >
-            View Posting <LinkIcon className="h-3 w-3" />
-          </a>
-        ) : (
-          <p className="text-sm font-semibold">No link</p>
-        )}
+      <div className="grid grid-cols-2 gap-4 border-t border-b border-border/50 py-4 my-2">
+        <div className="space-y-1">
+          <p className="text-xs font-medium text-muted-foreground uppercase flex items-center gap-1">
+            <LinkIcon className="h-3 w-3" /> Job Link
+          </p>
+          {job.url ? (
+            <a
+              href={job.url}
+              target="_blank"
+              rel="noreferrer"
+              className="text-sm font-semibold text-primary hover:underline flex items-center gap-1 inline-flex"
+            >
+              View Posting <LinkIcon className="h-3 w-3" />
+            </a>
+          ) : (
+            <p className="text-sm font-semibold">No link</p>
+          )}
+        </div>
+        <div className="space-y-1">
+          <p className="text-xs font-medium text-muted-foreground uppercase flex items-center gap-1">
+            <Compass className="h-3 w-3 text-emerald-500" /> Source
+          </p>
+          {job.source ? (
+            <Badge variant="outline" className="text-xs font-semibold bg-emerald-50/50 text-emerald-700 border-emerald-200 uppercase tracking-wide">
+              {job.source}
+            </Badge>
+          ) : (
+            <p className="text-sm font-semibold">Not specified</p>
+          )}
+        </div>
       </div>
 
       <div className="space-y-2">

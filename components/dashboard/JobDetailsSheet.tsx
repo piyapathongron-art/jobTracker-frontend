@@ -90,7 +90,11 @@ export function JobDetailsSheet({ job, open, onOpenChange }: Props) {
 
   return (
     <Sheet open={open} onOpenChange={handleSheetClose}>
-      <SheetContent className="w-full sm:max-w-2xl overflow-y-auto">
+      <SheetContent
+        className={`w-full sm:max-w-2xl overflow-y-auto ${isEditing ? "[&>button]:hidden" : ""}`}
+        onInteractOutside={(e) => isEditing && e.preventDefault()}
+        onEscapeKeyDown={(e) => isEditing && e.preventDefault()}
+      >
         <SheetHeader className="space-y-4">
           <div className="flex items-center justify-between">
             <Badge
@@ -107,10 +111,39 @@ export function JobDetailsSheet({ job, open, onOpenChange }: Props) {
                   <CheckCircle2 className="h-3 w-3" /> {successMessage}
                 </span>
               )}
+              {isEditing && (
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 px-3 text-xs cursor-pointer transition-all duration-200"
+                    onClick={() => setIsEditing(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    form="job-edit-form"
+                    size="sm"
+                    className="h-8 px-3 text-xs bg-[#2563EB] hover:bg-[#1d4ed8] text-white cursor-pointer shadow-sm transition-all duration-200 animate-in fade-in zoom-in duration-300"
+                  >
+                    Save
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
 
-          {!isEditing && (
+          {isEditing ? (
+            <div>
+              <SheetTitle className="text-2xl font-bold leading-tight">
+                Edit Job
+              </SheetTitle>
+              <SheetDescription className="text-sm mt-1">
+                Modify details for your application to {job.company}.
+              </SheetDescription>
+            </div>
+          ) : (
             <div>
               <div className="flex items-center gap-3 flex-wrap">
                 <SheetTitle className="text-2xl font-bold leading-tight">
@@ -119,7 +152,7 @@ export function JobDetailsSheet({ job, open, onOpenChange }: Props) {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-7 gap-1 px-2 text-xs text-muted-foreground hover:text-foreground shrink-0 border border-muted"
+                  className="h-7 gap-1 px-2 text-xs text-muted-foreground hover:text-foreground shrink-0 border border-muted cursor-pointer"
                   onClick={() => setIsEditing(true)}
                 >
                   <Pencil className="h-3 w-3" />
@@ -142,6 +175,7 @@ export function JobDetailsSheet({ job, open, onOpenChange }: Props) {
               setIsEditing={setIsEditing}
               onEditSubmit={handleEditSubmit}
               onDeleteJob={handleDeleteJob}
+              hideActions={true}
             />
           ) : (
             <Tabs defaultValue="overview">
@@ -175,6 +209,7 @@ export function JobDetailsSheet({ job, open, onOpenChange }: Props) {
                   setIsEditing={setIsEditing}
                   onEditSubmit={handleEditSubmit}
                   onDeleteJob={handleDeleteJob}
+                  hideActions={false}
                 />
               </TabsContent>
 
