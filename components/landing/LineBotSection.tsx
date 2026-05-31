@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { BriefcaseBusiness, Sparkles, QrCode, ArrowRight, Check } from "lucide-react";
+import { Sparkles, QrCode, ArrowRight, Check } from "lucide-react";
 import type { Dictionary } from "@/locales/en";
 
 interface LineBotSectionProps {
@@ -78,8 +78,12 @@ export function LineBotSection({ t }: LineBotSectionProps) {
               {/* LINE Header */}
               <div className="bg-[#00B900] text-white pt-7 pb-3 px-4 flex items-center gap-3.5 shadow-sm z-20 shrink-0">
                 <span className="text-white font-black text-sm shrink-0">〈</span>
-                <div className="h-9 w-9 rounded-full bg-white/20 flex items-center justify-center border border-white/10 relative shrink-0">
-                  <BriefcaseBusiness className="h-4 w-4 text-white" />
+                <div className="h-9 w-9 rounded-full bg-white/20 border border-white/10 relative shrink-0">
+                  <img
+                    src="/jobjab-avatar.jpg"
+                    alt="น้องจ๊อบแจ๊บ Avatar"
+                    className="h-full w-full rounded-full object-cover"
+                  />
                   <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-[#22C55E] border-2 border-[#00B900] animate-pulse" />
                 </div>
                 <div className="flex flex-col">
@@ -107,8 +111,12 @@ export function LineBotSection({ t }: LineBotSectionProps) {
 
                 {/* Bot scanning bubble */}
                 <div className="flex gap-2 items-start max-w-[85%] self-start">
-                  <div className="h-7 w-7 rounded-full bg-[#00B900] flex items-center justify-center shrink-0 shadow-sm">
-                    <BriefcaseBusiness className="h-3.5 w-3.5 text-white" />
+                  <div className="h-7 w-7 rounded-full bg-[#00B900] shrink-0 shadow-sm">
+                    <img
+                      src="/jobjab-avatar.jpg"
+                      alt="น้องจ๊อบแจ๊บ Avatar"
+                      className="h-full w-full rounded-full object-cover"
+                    />
                   </div>
                   <div className="space-y-1">
                     <div className="bg-white text-slate-800 p-2.5 rounded-2xl rounded-tl-none shadow-sm font-semibold text-[11px] leading-relaxed">
@@ -120,8 +128,12 @@ export function LineBotSection({ t }: LineBotSectionProps) {
 
                 {/* Bot parsed card bubble */}
                 <div className="flex gap-2 items-start max-w-[90%] self-start">
-                  <div className="h-7 w-7 rounded-full bg-[#00B900] flex items-center justify-center shrink-0 shadow-sm">
-                    <BriefcaseBusiness className="h-3.5 w-3.5 text-white" />
+                  <div className="h-7 w-7 rounded-full bg-[#00B900] shrink-0 shadow-sm">
+                    <img
+                      src="/jobjab-avatar.jpg"
+                      alt="น้องจ๊อบแจ๊บ Avatar"
+                      className="h-full w-full rounded-full object-cover"
+                    />
                   </div>
                   <div className="space-y-1 w-full">
                     <div className="bg-white text-slate-800 p-3.5 rounded-2xl rounded-tl-none shadow-md border-t-4 border-[#0EA5E9] space-y-2.5">

@@ -27,6 +27,14 @@ interface Release {
 
 const RELEASES: Release[] = [
   {
+    version: "v1.12.1",
+    date: "2026-05-31",
+    title: "Visual Brand Identity & Mascot Update",
+    changes: [
+      { type: "hotfix", text: "Replaced generic BriefcaseBusiness placeholder icons with the cute Jobjab red panda mascot avatar in the LINE Bot chat mockup and header for a premium, custom-branded experience." }
+    ],
+  },
+  {
     version: "v1.12.0",
     date: "2026-05-31",
     title: "Premium Landing Page & Jobjab LINE Bot",
