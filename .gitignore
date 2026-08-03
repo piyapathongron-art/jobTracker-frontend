@@ -47,3 +47,4 @@ GEMINI.md
 .claude/
 .gemini/
 /app/generated/prisma
+/generated
