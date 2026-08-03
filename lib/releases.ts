@@ -16,6 +16,16 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: "v1.12.1",
+    date: "2026-08-03",
+    title: "Speed & Reliability",
+    changes: [
+      { type: "fix", text: "The app now answers faster on the first visit of the day — no more waiting for it to wake up.", featured: true },
+      { type: "fix", text: "Saving jobs from LINE is more reliable, and interview reminders still arrive at 08:00.", featured: true },
+      { type: "refactor", text: "Behind-the-scenes cleanup that makes the app cheaper to run." },
+    ],
+  },
+  {
     version: "v1.12.0",
     date: "2026-05-31",
     title: "Premium Landing Page & Jobjab LINE Bot",
